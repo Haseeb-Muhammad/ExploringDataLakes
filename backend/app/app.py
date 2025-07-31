@@ -1,7 +1,67 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, Depends
+import pandas as pd
+from io import StringIO
+import json
+from .Database import Database
+from typing import Optional
+from fastapi import UploadFile
 
 app = FastAPI()
+database = None 
 
-@app.get("/")
-def hello():
-    return {"message" : "Backend is working"}
+def get_database() -> Optional[Database]:
+    """Returns the global database instance.
+
+    Returns:
+        Optional[Database]: The current database instance or None if not initialized.
+    """
+    global database
+    return database
+
+@app.get("/create-database")
+async def create_database() -> None:
+    """Initializes the global database instance.
+
+    Returns:
+        None
+    """
+    global database
+    database = Database()
+
+@app.post("/upload-database-file")
+async def upload_db_file(
+    file: UploadFile, database: Database = Depends(get_database)
+) -> dict:
+    """Uploads a CSV file and appends its contents as a DataFrame to the database.
+
+    Args:
+        file (UploadFile): The uploaded CSV file.
+        database (Database): The database instance.
+
+    Returns:
+        dict: A message indicating the backend is working.
+    """
+    contents: bytes = await file.read()
+    decoded: str = contents.decode("utf-8")
+    df: pd.DataFrame = pd.read_csv(StringIO(decoded))
+    database.db_frames.append(df)
+    return {"message": "Backend is working"}
+
+@app.post("/upload-ground-truth")
+async def upload_gt_file(
+    file: UploadFile, database: Database = Depends(get_database)
+) -> dict:
+    """Uploads a ground truth JSON file and stores its contents in the database.
+
+    Args:
+        file (UploadFile): The uploaded JSON file.
+        database (Database): The database instance.
+
+    Returns:
+        dict: Status and keys of the uploaded ground truth data.
+    """
+    contents: bytes = await file.read()
+    decoded: str = contents.decode("utf-8")
+    gt_data: dict = json.loads(decoded)
+    database.gt = gt_data
+    return {"status": "success", "keys": list(gt_data.keys())}

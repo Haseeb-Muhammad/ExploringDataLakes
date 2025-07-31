@@ -181,6 +181,7 @@ if upload_button:
     elif not st.session_state.ground_truth_file:
         st.error("❌ Please upload a ground truth JSON file")
     else:
+        requests.get(f"{BACKEND_URL}/create-database")
         # Perform upload
         st.markdown("---")
         st.header("📤 Upload Progress")
@@ -210,7 +211,7 @@ if upload_button:
                     }
                     
                     response = requests.post(
-                        f"{BACKEND_URL}/upload-database-file/",
+                        f"{BACKEND_URL}/upload-database-file",
                         files=files,
                         timeout=60
                     )
@@ -321,7 +322,6 @@ if upload_button:
             # Mark upload as completed
             if len(upload_results["errors"]) == 0:
                 st.session_state.upload_completed = True
-                st.balloons()
 
 # # Footer with backend connection test
 # st.markdown("---")
