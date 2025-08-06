@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 import numpy as np
 
 def Clusteror(ABC):

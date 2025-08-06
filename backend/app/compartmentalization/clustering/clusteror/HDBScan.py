@@ -1,4 +1,4 @@
-from clusteror import Clusteror
+from backend.app.compartmentalization.clustering.clusteror.clusteror import Clusteror
 import numpy as np
 
 class hdbscan(Clusteror):
@@ -6,7 +6,7 @@ class hdbscan(Clusteror):
     def __init__(self, min_cluster_size:int=2):
         self.clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, metric='euclidean')
 
-    def cluster(embeddings:np.ndarray):
+    def cluster(self, embeddings:np.ndarray):
         """
         Perform clustering on the input embeddings.
 
