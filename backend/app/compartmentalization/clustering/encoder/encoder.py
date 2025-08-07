@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-def Encoder(ABC):
+class Encoder(ABC):
 
     @abstractmethod
     def encode(self, texts:list[str])->np.ndarray:
