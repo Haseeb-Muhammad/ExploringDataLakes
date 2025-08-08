@@ -4,6 +4,10 @@ import json
 class Database:
 
     def __init__(self):
-        self.db_frames : list(pd.DataFrame) = []
+        self.db_frames : list[pd.DataFrame] = []
         self.gt:json = {}
-lf.gt:json = {}
+    
+    def resetDatabase(self):
+        self.db_frames = []
+        self.gt = {}
+

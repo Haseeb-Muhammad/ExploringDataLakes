@@ -5,32 +5,13 @@ import json
 from .Database import Database
 from typing import Optional
 from fastapi import UploadFile
+from helper import database
 
 app = FastAPI()
-database = None 
-
-def get_database() -> Optional[Database]:
-    """Returns the global database instance.
-
-    Returns:
-        Optional[Database]: The current database instance or None if not initialized.
-    """
-    global database
-    return database
-
-@app.get("/create-database")
-async def create_database() -> None:
-    """Initializes the global database instance.
-
-    Returns:
-        None
-    """
-    global database
-    database = Database()
 
 @app.post("/upload-database-file")
 async def upload_db_file(
-    file: UploadFile, database: Database = Depends(get_database)
+    file: UploadFile
 ) -> dict:
     """Uploads a CSV file and appends its contents as a DataFrame to the database.
 
@@ -49,7 +30,7 @@ async def upload_db_file(
 
 @app.post("/upload-ground-truth")
 async def upload_gt_file(
-    file: UploadFile, database: Database = Depends(get_database)
+    file: UploadFile
 ) -> dict:
     """Uploads a ground truth JSON file and stores its contents in the database.
 
