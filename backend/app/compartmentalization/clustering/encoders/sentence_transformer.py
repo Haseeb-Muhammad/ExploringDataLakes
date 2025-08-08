@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from app.compartmentalization.clustering.encoder.encoder import Encoder
+from app.compartmentalization.clustering.encoders.encoder import Encoder
 
 import numpy as np
 
@@ -15,7 +15,8 @@ class SentenceTransformerEncoder(Encoder):
         Attributes:
             model (SentenceTransformer): The loaded SentenceTransformer model instance.
         """
-        self.model = SentenceTransformer(model_name)
+        self.model_name = model_name
+        self.model = SentenceTransformer(self.model_name)
 
     def encode(self, texts: list[str]) -> np.ndarray:
         """
@@ -29,3 +30,6 @@ class SentenceTransformerEncoder(Encoder):
         """
         embeddings = self.model.encode(texts, convert_to_numpy=True)
         return embeddings
+    
+    def __str__(self):
+        return f"{self.model_name}"
