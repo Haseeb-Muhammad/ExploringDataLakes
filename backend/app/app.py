@@ -3,34 +3,16 @@ import pandas as pd
 from io import StringIO
 import json
 from .Database import Database
-from typing import Optional
+from typing import Optional, Dict, List
 from fastapi import UploadFile
+from helper import database, hdbscan
+from descriptionGeneration.descriptionGeneration import generate_description
 
 app = FastAPI()
-database = None 
-
-def get_database() -> Optional[Database]:
-    """Returns the global database instance.
-
-    Returns:
-        Optional[Database]: The current database instance or None if not initialized.
-    """
-    global database
-    return database
-
-@app.get("/create-database")
-async def create_database() -> None:
-    """Initializes the global database instance.
-
-    Returns:
-        None
-    """
-    global database
-    database = Database()
 
 @app.post("/upload-database-file")
 async def upload_db_file(
-    file: UploadFile, database: Database = Depends(get_database)
+    file: UploadFile
 ) -> dict:
     """Uploads a CSV file and appends its contents as a DataFrame to the database.
 
@@ -44,12 +26,12 @@ async def upload_db_file(
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
     df: pd.DataFrame = pd.read_csv(StringIO(decoded))
-    database.db_frames.append(df)
+    database.db_frames[file.filename] = df
     return {"message": "Backend is working"}
 
 @app.post("/upload-ground-truth")
 async def upload_gt_file(
-    file: UploadFile, database: Database = Depends(get_database)
+    file: UploadFile
 ) -> dict:
     """Uploads a ground truth JSON file and stores its contents in the database.
 
@@ -65,3 +47,23 @@ async def upload_gt_file(
     gt_data: dict = json.loads(decoded)
     database.gt = gt_data
     return {"status": "success", "keys": list(gt_data.keys())}
+
+@app.get("/HDBScanClustering")
+async def HDBScanClustering() -> dict:
+    """
+    Performs HDBSCAN clustering on the database descriptions.
+
+    This endpoint first generates descriptions for the database entries,
+    then applies the HDBSCAN clustering algorithm to these descriptions.
+    The result is a nested dictionary mapping cluster IDs to their respective
+    data points.
+
+    Returns:
+            Return a dict: {level: {clusterNo: [table names]}} 
+    """
+    generate_description()
+    table_names = list(database.db_description["tables"].keys())
+    texts = [f"{table_name} : {database.db_description["tables"][table_name]['note']}" for table_name in table_names]  
+
+    return hdbscan.cluster(texts)
+

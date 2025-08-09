@@ -1,0 +1,165 @@
+{
+  "tables": {
+    "CATEGORIES": {
+      "note": "Stores product category records, each identified by a unique numeric ID, with a name, detailed description, and associated image.",
+      "columns": {
+        "CATEGORY_ID": {
+          "type": "number",
+          "primaryKey": true,
+          "note": "Unique numeric identifier for each product category, serving as the primary key."
+        },
+        "CATEGORY_NAME": {
+          "type": "text",
+          "note": "Descriptive, unique name of the product category."
+        },
+        "DESCRIPTION": {
+          "type": "text",
+          "note": "Detailed textual description of the product category’s contents and purpose."
+        },
+        "PICTURE": {
+          "type": "text",
+          "note": "Binary image data for the category, stored in hexadecimal or blob format."
+        }
+      }
+    },
+    "CUSTOMERS": {
+      "note": "Stores customer records including unique identifier, company information, contact details, and address data.",
+      "columns": {
+        "CUSTOMER_ID": { "type": "text", "primaryKey": true, "note": "Unique alphanumeric identifier for each customer." },
+        "COMPANY_NAME": { "type": "text", "note": "Full registered name of the customer`s company or organization." },
+        "CONTACT_NAME": { "type": "text", "note": "Name of the primary contact person at the company." },
+        "CONTACT_TITLE": { "type": "text", "note": "Job title or position of the contact person." },
+        "ADDRESS": { "type": "text", "note": "Street address and building number for the customer." },
+        "CITY": { "type": "text", "note": "City component of the customer`s address." },
+        "REGION": { "type": "text", "note": "State, province, or region of the address; may be null if not applicable." },
+        "POSTAL_CODE": { "type": "text", "note": "Postal or ZIP code for the address; format may vary by country; may be null." },
+        "COUNTRY": { "type": "text", "note": "Country name where the customer is located." },
+        "PHONE": { "type": "text", "note": "Primary contact phone number for the customer." },
+        "FAX": { "type": "text", "note": "Fax number for the customer; may be null if unavailable." }
+      }
+    },
+    "EMPLOYEES": {
+      "note": "Contains records of company employees, including personal details, job roles, contact information, and reporting relationships.",
+      "columns": {
+        "EMPLOYEE_ID": { "type": "number", "primaryKey": true, "note": "Unique identifier for each employee; serves as the primary key." },
+        "LAST_NAME": { "type": "text", "note": "Employee`s last name (surname)." },
+        "FIRST_NAME": { "type": "text", "note": "Employee`s first name (given name)." },
+        "TITLE": { "type": "text", "note": "Job title or position held by the employee within the company." },
+        "TITLE_OF_COURTESY": { "type": "text", "note": "Courtesy title such as `Mr.`, `Ms.`, `Dr.`, etc." },
+        "BIRTH_DATE": { "type": "date", "note": "Date of birth of the employee." },
+        "HIRE_DATE": { "type": "date", "note": "Date on which the employee was hired by the company." },
+        "ADDRESS": { "type": "text", "note": "Street address for the employee`s place of residence." },
+        "CITY": { "type": "text", "note": "City portion of the employee`s address." },
+        "REGION": { "type": "text", "note": "State, province, or region code; may be null if not applicable." },
+        "POSTAL_CODE": { "type": "text", "note": "Postal or ZIP code for the employee`s address." },
+        "COUNTRY": { "type": "text", "note": "Country where the employee resides." },
+        "HOME_PHONE": { "type": "text", "note": "Employee`s home phone number, including area code." },
+        "EXTENSION": { "type": "number", "note": "Office phone extension number assigned to the employee." },
+        "PHOTO": { "type": "text", "note": "Binary image data representing the employee`s photograph." },
+        "NOTES": { "type": "text", "note": "Additional biographical or career notes about the employee." },
+        "REPORTS_TO": { "type": "number", "note": "Employee ID of the manager to whom this employee reports; self-referencing foreign key, null for top-level managers." },
+        "PHOTO_PATH": { "type": "text", "note": "URL or file path pointing to the employee`s photo resource." }
+      }
+    },
+    "EMPLOYEE_TERRITORIES": {
+      "note": "Associates employees with the territories they manage. Each record assigns one territory to one employee.",
+      "columns": {
+        "EMPLOYEE_ID": { "type": "number", "primaryKey": true, "note": "Identifier of the employee assigned to the territory; foreign key referencing the EMPLOYEES table." },
+        "TERRITORY_ID": { "type": "number", "primaryKey": true, "note": "Identifier of the territory managed by the employee; unique primary key for this table and foreign key referencing the TERRITORIES table." }
+      }
+    },
+    "ORDERS": {
+      "note": "Stores order transactions including customer, employee, order dates, shipping details, and freight charges.",
+      "columns": {
+        "ORDER_ID": { "type": "number", "primaryKey": true, "note": "Primary key. Unique identifier for each order." },
+        "CUSTOMER_ID": { "type": "text", "note": "Identifier of the customer who placed the order. Foreign key to CUSTOMERS.CUSTOMER_ID." },
+        "EMPLOYEE_ID": { "type": "number", "note": "Identifier of the employee responsible for processing the order. Foreign key to EMPLOYEES.EMPLOYEE_ID." },
+        "ORDER_DATE": { "type": "date", "note": "Date when the order was placed by the customer." },
+        "REQUIRED_DATE": { "type": "date", "note": "Date by which the customer requires the order to be delivered." },
+        "SHIPPED_DATE": { "type": "date", "note": "Date when the order was shipped. Null if not yet shipped." },
+        "SHIP_VIA": { "type": "number", "note": "Identifier of the shipping carrier or method. Foreign key to SHIPPERS.SHIPPER_ID." },
+        "FREIGHT": { "type": "number", "note": "Freight charge applied to the order." },
+        "SHIP_NAME": { "type": "text", "note": "Name of the recipient or shipping destination." },
+        "SHIP_ADDRESS": { "type": "text", "note": "Street address for order delivery." },
+        "SHIP_CITY": { "type": "text", "note": "City of the shipping destination." },
+        "SHIP_REGION": { "type": "text", "note": "Region or state of the shipping destination. Null if not applicable." },
+        "SHIP_POSTAL_CODE": { "type": "text", "note": "Postal code or ZIP of the shipping destination. May include letters or hyphens." },
+        "SHIP_COUNTRY": { "type": "text", "note": "Country of the shipping destination." }
+      }
+    },
+    "ORDER_DETAILS": {
+      "note": "Contains line‐item details for each customer order, including the product, unit price, quantity ordered, and any discount applied. Each row represents one product entry within an order.",
+      "columns": {
+        "ORDER_ID": { "type": "number", "primaryKey": true, "note": "Identifier of the order to which this line item belongs; foreign key referencing the ORDERS table." },
+        "PRODUCT_ID": { "type": "number", "primaryKey": true, "note": "Identifier of the product in this line item; foreign key referencing the PRODUCTS table." },
+        "UNIT_PRICE": { "type": "number", "note": "Price per unit of the product at the time the order was placed." },
+        "QUANTITY": { "type": "number", "note": "Number of units of the product ordered in this line item." },
+        "DISCOUNT": { "type": "number", "note": "Discount applied to this line item, expressed as a fraction of the unit price (e.g., 0.00 = no discount, up to 0.25)." }
+      }
+    },
+    "PRODUCTS": {
+      "note": "Stores details of each product, including identifiers, pricing, inventory levels, and references to supplier and category entities.",
+      "columns": {
+        "PRODUCT_ID": { "type": "number", "primaryKey": true, "note": "Unique identifier for each product (primary key)." },
+        "PRODUCT_NAME": { "type": "text", "note": "Name of the product; unique and descriptive." },
+        "SUPPLIER_ID": { "type": "number", "note": "Identifier of the supplier providing the product (foreign key to SUPPLIERS table)." },
+        "CATEGORY_ID": { "type": "number", "note": "Identifier of the product category (foreign key to CATEGORIES table)." },
+        "QUANTITY_PER_UNIT": { "type": "text", "note": "Packaging or unit size description (e.g., `10 boxes x 30 bags`)." },
+        "UNIT_PRICE": { "type": "number", "note": "Selling price per unit of product." },
+        "UNITS_IN_STOCK": { "type": "number", "note": "Current quantity of the product available in stock." },
+        "UNITS_ON_ORDER": { "type": "number", "note": "Quantity of the product currently on order from suppliers." },
+        "REORDER_LEVEL": { "type": "number", "note": "Inventory level at which a reorder should be triggered." },
+        "DISCONTINUED": { "type": "number", "note": "Flag indicating whether the product is discontinued (0 = active, 1 = discontinued)." }
+      }
+    },
+    "REGION": {
+      "note": "Reference table containing geographic regions used to categorize territories, addresses, or organizational divisions across the system.",
+      "columns": {
+        "REGION_ID": { "type": "number", "primaryKey": true, "note": "Primary key representing a unique numeric identifier for each geographic region." },
+        "REGION_DESCRIPTION": { "type": "text", "note": "Unique name describing the geographic region (e.g., Eastern, Western, Northern, Southern)." }
+      }
+    },
+    "SHIPPERS": {
+      "note": "Stores shipping companies and their contact information for fulfilling orders.",
+      "columns": {
+        "SHIPPER_ID": { "type": "number", "primaryKey": true, "note": "Unique identifier for each shipping company; serves as the primary key." },
+        "COMPANY_NAME": { "type": "text", "note": "Official name of the shipping company." },
+        "PHONE": { "type": "text", "note": "Contact phone number for the shipping company." }
+      }
+    },
+    "SUPPLIERS": {
+      "note": "Stores information about companies that supply products, including contact details and location.",
+      "columns": {
+        "SUPPLIER_ID": { "type": "number", "primaryKey": true, "note": "Unique identifier for each supplier. Serves as the primary key." },
+        "COMPANY_NAME": { "type": "text", "note": "Official name of the supplier company." },
+        "CONTACT_NAME": { "type": "text", "note": "Name of the primary contact person at the supplier." },
+        "CONTACT_TITLE": { "type": "text", "note": "Job title or position of the contact person." },
+        "ADDRESS": { "type": "text", "note": "Street address of the supplier." },
+        "CITY": { "type": "text", "note": "City where the supplier is located." },
+        "REGION": { "type": "text", "note": "State, province, or region of the supplier. Nullable when not applicable." },
+        "POSTAL_CODE": { "type": "text", "note": "Postal or ZIP code for the supplier`s address." },
+        "COUNTRY": { "type": "text", "note": "Country of the supplier." },
+        "PHONE": { "type": "text", "note": "Primary telephone number for contacting the supplier." },
+        "FAX": { "type": "text", "note": "Fax number for the supplier. Nullable when not provided." },
+        "HOMEPAGE": { "type": "text", "note": "Web address or homepage URL of the supplier. Nullable when not available." }
+      }
+    },
+    "TERRITORIES": {
+      "note": "Defines sales territories by numeric ID, name, and the region to which each territory belongs.",
+      "columns": {
+        "TERRITORY_ID": { "type": "number", "primaryKey": true, "note": "Unique numeric identifier for each territory (primary key)." },
+        "TERRITORY_DESCRIPTION": { "type": "text", "note": "Name or descriptive label of the territory." },
+        "REGION_ID": { "type": "number", "note": "Identifier of the region associated with the territory (foreign key to REGIONS)." }
+      }
+    },
+    "US_STATES": {
+      "note": "Stores all U.S. states and the District of Columbia, providing a unique identifier, full name, postal abbreviation, and region classification for each.",
+      "columns": {
+        "STATE_ID": { "type": "number", "primaryKey": true, "note": "Surrogate primary key for the state record; unique numeric identifier for each state or District of Columbia." },
+        "STATE_NAME": { "type": "text", "note": "Full official name of the state or District of Columbia." },
+        "STATE_ABBR": { "type": "text", "note": "Two-letter USPS postal abbreviation for the state or District of Columbia." },
+        "STATE_REGION": { "type": "text", "note": "Categorical region assignment (e.g., South, North, West) used to group states into broader U.S. regions." }
+      }
+    }
+  }
+}
