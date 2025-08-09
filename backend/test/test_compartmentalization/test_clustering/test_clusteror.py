@@ -5,6 +5,7 @@ from typing import List, Union, Optional, Dict
 import logging
 import numpy as np
 from collections import defaultdict, Counter
+from ...util import log_clusters
 
 # Add the backend directory to PYTHONPATH
 sys.path.append(str(Path(__file__).resolve().parents[3]))
@@ -31,24 +32,43 @@ def parse_args():
 
     return parser.parse_args()
 
-def log_clusters(clusters):
-    for cluster_level, val in clusters.items():
-        logging.info(f"Cluster Level {cluster_level}")
-        for clusterID, cluster in val.items():
-            logging.info(f"Cluster {clusterID}: {[desc.split(":")[0] for desc in cluster]}")
-        logging.info(f"{'-'*50}")
-
 def main():
+    """Main function to perform clustering on table descriptions and log the results.
 
+    This function executes the following steps:
+      1. Sets up logging to a file named 'logs.log' in the current directory.
+      2. Parses command-line arguments to obtain the path to a JSON file containing table descriptions.
+      3. Loads table descriptions from the specified JSON file.
+      4. Prepares a list of table descriptions for clustering.
+      5. Initializes a sentence transformer encoder and an HDBScan clusteror.
+      6. Logs information about the clusteror and encoder being used.
+      7. Applies the clustering algorithm to the table descriptions.
+      8. Logs the resulting clusters using a utility function.
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Side Effects:
+        - Writes log output to 'logs.log'.
+        - Reads from the file specified by the '--description_path' argument.
+        - Logs the clusters and information about the clustering process.
+
+    Example:
+        Run this script from the command line to cluster table descriptions:
+            $ python test_clusteror.py --description_path /path/to/descriptions.json
+    """
     log_path = os.path.join(os.path.dirname(__file__), "logs.log")
     logging.basicConfig(
-                    filename=log_path,
-                    encoding="utf-8",
-                    filemode="w",
-                    format="{asctime} - {levelname} - {message}",
-                    style="{",
-                    datefmt="%Y-%m-%d %H:%M",
-                    level=logging.INFO
+        filename=log_path,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+        level=logging.INFO
     )
 
     args = parse_args()
@@ -56,11 +76,11 @@ def main():
     with open(args.description_path) as f: 
         data = json.load(f)
         table_names = list(data["tables"].keys())
-        texts = [f"{table_name} : {data["tables"][table_name]['note']}" for table_name in table_names]  
+        texts = [f"{table_name} : {data['tables'][table_name]['note']}" for table_name in table_names]  
 
     encoder = SentenceTransformerEncoder(model_name="all-MiniLM-L6-v2")
     clusteror = HDBScan(encoder=encoder)
-
+    
     logging.info(f"{'-'*100}")
     logging.info(f"Clusteror: {str(clusteror)}")
     logging.info(f"Encoder: {str(encoder)}")

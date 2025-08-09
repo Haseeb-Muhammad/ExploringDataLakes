@@ -3,7 +3,7 @@ from ..encoders.encoder import Encoder
 import hdbscan
 import numpy as np
 from collections import defaultdict
-from typing import List
+from typing import List,Dict
 
 class HDBScan(Clusteror):
     """HDBScan clustering class for text data.
@@ -27,7 +27,7 @@ class HDBScan(Clusteror):
         self.encoder = encoder
         self.clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, metric='euclidean')
 
-    def cluster(self, text: List[str]):
+    def cluster(self, text: List[str]) -> dict:
         """Clusters a list of text strings using HDBSCAN.
 
         Encodes the input text into embeddings, fits the HDBSCAN clusterer, and groups

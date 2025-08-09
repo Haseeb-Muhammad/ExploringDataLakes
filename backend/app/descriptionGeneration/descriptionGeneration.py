@@ -63,6 +63,4 @@ def generate_description():
         input=formatted_prompt
     )   
 
-    print(f"Generated from LLM: {response.output_text}")
-
     database.db_description = json.loads(response.output_text)

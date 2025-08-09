@@ -5,7 +5,7 @@ import json
 from .Database import Database
 from typing import Optional, Dict, List
 from fastapi import UploadFile
-from helper import database, sentence_transformer, hdbscan
+from helper import database, hdbscan
 from descriptionGeneration.descriptionGeneration import generate_description
 
 app = FastAPI()
@@ -49,7 +49,7 @@ async def upload_gt_file(
     return {"status": "success", "keys": list(gt_data.keys())}
 
 @app.get("/HDBScanClustering")
-async def HDBScanClustering() -> Dict[int, Dict[int, List]]:
+async def HDBScanClustering() -> dict:
     """
     Performs HDBSCAN clustering on the database descriptions.
 
@@ -62,5 +62,8 @@ async def HDBScanClustering() -> Dict[int, Dict[int, List]]:
             Return a dict: {level: {clusterNo: [table names]}} 
     """
     generate_description()
-    return hdbscan.cluster(database.db_description)
+    table_names = list(database.db_description["tables"].keys())
+    texts = [f"{table_name} : {database.db_description["tables"][table_name]['note']}" for table_name in table_names]  
+
+    return hdbscan.cluster(texts)
 

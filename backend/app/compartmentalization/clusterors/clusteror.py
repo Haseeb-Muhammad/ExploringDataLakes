@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Any, Dict
 import numpy as np
-from app.compartmentalization.clustering.encoders.encoder import Encoder
+from app.compartmentalization.encoders.encoder import Encoder
 
 class Clusteror(ABC):
 
@@ -19,7 +19,7 @@ class Clusteror(ABC):
     def cluster(
         self,
         text : List[str],
-    ) -> Dict[int, Dict[int, List]]:
+    ) -> dict:
         """
         Clusters the given list of text data into groups.
 

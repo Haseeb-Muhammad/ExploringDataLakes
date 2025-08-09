@@ -1,7 +1,7 @@
 from .Database import Database
 from openai import OpenAI
-from .compartmentalization.clustering.clusterors.HDBScan import HDBScan
-from .compartmentalization.clustering.encoders.sentence_transformer import SentenceTransformerEncoder
+from .compartmentalization.clusterors.HDBScan import HDBScan
+from .compartmentalization.encoders.sentence_transformer import SentenceTransformerEncoder
 import os
 
 sentence_transformer = SentenceTransformerEncoder()
