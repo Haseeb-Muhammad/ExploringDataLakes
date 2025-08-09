@@ -49,7 +49,18 @@ async def upload_gt_file(
     return {"status": "success", "keys": list(gt_data.keys())}
 
 @app.get("/HDBScanClustering")
-async def HDBScanClustering()-> Dict[int, Dict[int, List]]:
+async def HDBScanClustering() -> Dict[int, Dict[int, List]]:
+    """
+    Performs HDBSCAN clustering on the database descriptions.
+
+    This endpoint first generates descriptions for the database entries,
+    then applies the HDBSCAN clustering algorithm to these descriptions.
+    The result is a nested dictionary mapping cluster IDs to their respective
+    data points.
+
+    Returns:
+            Return a dict: {level: {clusterNo: [table names]}} 
+    """
     generate_description()
     return hdbscan.cluster(database.db_description)
 
