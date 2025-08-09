@@ -1,5 +1,5 @@
-from app.compartmentalization.clustering.clusterors.clusteror import Clusteror
-from app.compartmentalization.clustering.encoders.encoder import Encoder
+from .clusteror import Clusteror
+from ..encoders.encoder import Encoder
 import hdbscan
 import numpy as np
 from collections import defaultdict

@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from app.compartmentalization.clustering.encoders.encoder import Encoder
+from .encoder import Encoder
 
 import numpy as np
 

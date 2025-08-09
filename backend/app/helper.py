@@ -1,11 +1,18 @@
-from Database import Database
+from .Database import Database
 from openai import OpenAI
-from app.compartmentalization.clustering.clusterors.HDBScan import HDBScan
-from app.compartmentalization.clustering.encoders.sentence_transformer import SentenceTransformerEncoder
+from .compartmentalization.clustering.clusterors.HDBScan import HDBScan
+from .compartmentalization.clustering.encoders.sentence_transformer import SentenceTransformerEncoder
 import os
 
-hdbscan = HDBScan()
 sentence_transformer = SentenceTransformerEncoder()
+hdbscan = HDBScan(encoder=sentence_transformer)
 
 database = Database()
-llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Initialize OpenAI client only if API key is available
+api_key = os.getenv("OPENAI_API_KEY")
+if api_key:
+    llm = OpenAI(api_key=api_key)
+else:
+    llm = None
+    print("Warning: OPENAI_API_KEY not set. LLM functionality will be disabled.")

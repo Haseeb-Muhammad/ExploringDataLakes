@@ -1,7 +1,7 @@
-from app.Database import Database
-from prompt import DOCUMENTATION_PROMPT_TEMPLATE
-from app.helper import llm, database
+from ..Database import Database
+from .prompt import DOCUMENTATION_PROMPT_TEMPLATE
 import json
+from ..helper import llm, database
 
 def extract_schema_from_database(sample_size=3):
     """Extracts schema and sample data from all tables in the database.
@@ -34,7 +34,7 @@ def extract_schema_from_database(sample_size=3):
             "columns": {
                 col: {
                     "dtype": str(df[col].dtype),
-                    "samples": df[col].dropna().unique()[:sample_size].tolist()
+                    "samples": df[col].dropna().unique()[:int(sample_size)].tolist()
                 }
                 for col in df.columns
             }
@@ -52,15 +52,17 @@ def generate_description():
     Returns:
         None
     """
-    database_meta_data = extract_schema_from_database(database)
+    database_meta_data = extract_schema_from_database()
 
     formatted_prompt = DOCUMENTATION_PROMPT_TEMPLATE.format(
-        METADATA=database_meta_data
+        metadata=database_meta_data
     )
 
     response = llm.responses.create(
         model="o4-mini",
         input=formatted_prompt
     )   
+
+    print(f"Generated from LLM: {response.output_text}")
 
     database.db_description = json.loads(response.output_text)
