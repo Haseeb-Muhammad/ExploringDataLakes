@@ -88,18 +88,6 @@ def welcome_page():
                     st.json(result)
                     # Force a rerun to display the database description
                     st.rerun()
-                    st.session_state.show_description=True
-    
-    # Display database description if available
-    # if 'show_description' not in st.session_state:
-        # st.session_state.show_description = True
-    
-    # Mock database description for demonstration
-    # In a real implementation, you'd fetch this from your backend
-    st.session_state.show_description=False
-    if st.session_state.show_description:
-        mock_description = get_database_description()
-        display_database_description(mock_description)
     
     # Action buttons
     st.markdown("---")
@@ -119,6 +107,12 @@ def welcome_page():
         if st.button("🔍 Go to Clustering", key="go_clustering"):
             st.session_state.page = "clustering"
             st.rerun()
+    
+    with button_col3:
+        if st.button("Show database description",key="show_description"):
+            mock_description = get_database_description()
+            display_database_description(mock_description)
+    
 
 def clustering_page():
     """Clustering page with algorithm selection and results"""

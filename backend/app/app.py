@@ -13,7 +13,7 @@ import logging
 
 app = FastAPI()
 
-log_path = os.path.join(os.path.dirname(__file__), "TestingDescriptionGeneration.log")
+log_path = os.path.join(os.path.dirname(__file__), "log.log")
 logging.basicConfig(
                     filename=log_path,
                     encoding="utf-8",
