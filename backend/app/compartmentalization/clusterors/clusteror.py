@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Any, Dict
 import numpy as np
-from app.compartmentalization.encoders.encoder import Encoder
+from ..encoders.encoder import Encoder
 
 class Clusteror(ABC):
 
