@@ -11,12 +11,13 @@ fastapi = "^0.110"
 uvicorn = "^0.29.0"
 pandas = "^2.3.1"
 python-multipart = "^0.0.20"
-numpy = "^2.3.2"
+numpy = "2.0.2"
 sentence-transformers = "^5.1.0"
 hdbscan = "^0.8.40"
-umap = "^0.1.1"
+umap-learn = "^0.5.6"
 openai = "^1.99.5"
-
+numba = "^0.60.0"
+llvmlite = "^0.43.0"
 
 [build-system]
 requires = ["poetry-core"]
