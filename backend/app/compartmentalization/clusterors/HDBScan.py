@@ -47,12 +47,15 @@ class HDBScan(Clusteror):
         
         label_map = defaultdict(list)
         for text_item, label in zip(text, labels):
+            # Convert numpy types to regular Python types for JSON serialization
+            label = int(label) if hasattr(label, 'item') else label
             if label_map.get(label) is None:
                 label_map[label] = [text_item]
             else:
                 label_map[label].append(text_item)
 
-        return {1: label_map}
+        # Convert defaultdict to regular dict for JSON serialization
+        return {1: dict(label_map)}
     
     def __str__(self):
         """Returns a string representation of the HDBScan clusteror.

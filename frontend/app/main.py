@@ -1,350 +1,223 @@
 import streamlit as st
 import requests
-import pandas as pd
 import json
-import io
-from typing import List, Dict, Any
-import time
+from typing import Dict, Any
+import pandas as pd
+from util import *
 
-# Backend URL
-BACKEND_URL = "http://backend:8000"  # For Docker Compose
-# BACKEND_URL = "http://localhost:8000"  # For local development
-
-# Initialize session state
-if 'database_files' not in st.session_state:
-    st.session_state.database_files = []
-if 'ground_truth_file' not in st.session_state:
-    st.session_state.ground_truth_file = None
-if 'upload_completed' not in st.session_state:
-    st.session_state.upload_completed = False
-
+# Configure the page
 st.set_page_config(
-    page_title="Database Upload Interface",
-    page_icon="🗄️",
+    page_title="Data Lake Explorer",
+    page_icon="🏞️",
     layout="wide"
 )
 
-st.title("🗄️ Database Files Upload Interface")
-st.markdown("---")
 
-# Create two columns for layout
-col1, col2, col3 = st.columns([2, 2, 1])
-
-with col1:
-    st.header("📊 Database Files (CSV)")
-    st.write("Upload multiple CSV files representing your database tables")
+def display_database_description(description: Dict[str, Any]):
+    """Display the database description in a formatted way"""
+    if not description or "tables" not in description:
+        st.warning("No database description available.")
+        return
     
-    # Database files upload
-    database_files = st.file_uploader(
-        "Select Database CSV Files",
-        type=['csv'],
-        accept_multiple_files=True,
-        key="database_uploader",
-        help="Upload all CSV files that represent your database tables"
-    )
+    st.subheader("📋 Database Description")
     
-    # Store files in session state
-    if database_files:
-        st.session_state.database_files = database_files
-    
-    # Display uploaded database files
-    if st.session_state.database_files:
-        st.success(f"✅ {len(st.session_state.database_files)} database files selected")
-        
-        with st.expander("📋 View Database Files Details", expanded=False):
-            total_size = 0
-            for i, file in enumerate(st.session_state.database_files):
-                total_size += file.size
-                
-                with st.container():
-                    st.write(f"**{i+1}. {file.name}**")
-                    
-                    # Try to preview the CSV
-                    try:
-                        file.seek(0)
-                        df = pd.read_csv(file)
-                        col_a, col_b = st.columns(2)
-                        
-                        with col_a:
-                            st.metric("Rows", len(df))
-                            st.metric("Columns", len(df.columns))
-                        
-                        with col_b:
-                            st.metric("Size", f"{file.size:,} bytes")
-                            st.metric("Memory Usage", f"{df.memory_usage(deep=True).sum():,} bytes")
-                        
-                        # Show column names
-                        st.write("**Columns:**", ", ".join(df.columns.tolist()))
-                        
-                        # Show sample data
-                        if st.checkbox(f"Preview data for {file.name}", key=f"preview_{i}"):
-                            st.dataframe(df.head(), use_container_width=True)
-                            
-                    except Exception as e:
-                        st.error(f"Error reading {file.name}: {str(e)}")
-                    
-                    st.markdown("---")
+    for table_name, table_info in description["tables"].items():
+        with st.expander(f"Table: {table_name}", expanded=False):
+            st.write(f"**Description:** {table_info.get('note', 'No description available')}")
             
-            st.info(f"**Total:** {len(st.session_state.database_files)} files, {total_size:,} bytes")
+            if "columns" in table_info and table_info["columns"]:
+                st.write("**Columns:**")
+                col_data = []
+                for col_name, col_info in table_info["columns"].items():
+                    col_data.append({
+                        "Column Name": col_name,
+                        "Type": col_info.get("type", "Unknown"),
+                        "Description": col_info.get("note", "No description available")
+                    })
+                
+                df = pd.DataFrame(col_data)
+                st.dataframe(df, use_container_width=True)
 
-with col2:
-    st.header("🎯 Ground Truth File (JSON)")
-    st.write("Upload the ground truth file for validation/testing")
+def welcome_page():
+    """Welcome page with file upload functionality"""
+    st.title("🏞️ Data Lake Explorer")
+    st.markdown("Welcome to the Data Lake Explorer! Upload your database files and ground truth to get started.")
     
-    # Ground truth file upload
-    ground_truth_file = st.file_uploader(
-        "Select Ground Truth JSON File",
-        type=['json'],
-        key="ground_truth_uploader",
-        help="Upload the JSON file containing ground truth data"
-    )
+    # Create two columns for better layout
+    col1, col2 = st.columns(2)
     
-    # Store ground truth file in session state
-    if ground_truth_file:
-        st.session_state.ground_truth_file = ground_truth_file
-    
-    # Display ground truth file details
-    if st.session_state.ground_truth_file:
-        st.success("✅ Ground truth file selected")
+    with col1:
+        st.subheader("📁 Upload Database Files")
+        database_files = st.file_uploader(
+            "Choose database files (.csv)",
+            type=['csv'],
+            accept_multiple_files=True,
+            key="db_files"
+        )
         
-        with st.expander("📋 View Ground Truth Details", expanded=False):
-            file = st.session_state.ground_truth_file
-            st.write(f"**Filename:** {file.name}")
-            st.write(f"**Size:** {file.size:,} bytes")
-            
-            # Try to preview JSON
-            try:
-                file.seek(0)
-                json_data = json.load(file)
+        if database_files:
+            if st.button("Upload Database Files", key="upload_db"):
+                progress_bar = st.progress(0)
+                success_count = 0
                 
-                st.write(f"**Type:** {type(json_data).__name__}")
-                
-                if isinstance(json_data, list):
-                    st.write(f"**Array Length:** {len(json_data)}")
-                    if len(json_data) > 0:
-                        st.write(f"**Sample Structure:** {type(json_data[0]).__name__}")
-                        if isinstance(json_data[0], dict):
-                            st.write(f"**Keys:** {', '.join(json_data[0].keys())}")
-                
-                elif isinstance(json_data, dict):
-                    st.write(f"**Keys:** {', '.join(json_data.keys())}")
-                
-                # Show preview
-                if st.checkbox("Preview JSON content", key="preview_json"):
-                    if len(str(json_data)) < 2000:
-                        st.json(json_data)
+                for i, file in enumerate(database_files):
+                    result = upload_database_file(file)
+                    if result:
+                        st.success(f"✅ Uploaded: {file.name}")
+                        success_count += 1
                     else:
-                        st.json(str(json_data)[:2000] + "... (truncated)")
-                        
-            except Exception as e:
-                st.error(f"Error reading JSON: {str(e)}")
+                        st.error(f"❌ Failed to upload: {file.name}")
+                    
+                    progress_bar.progress((i + 1) / len(database_files))
+                
+                st.info(f"Uploaded {success_count} out of {len(database_files)} files successfully.")
+    
+    with col2:
+        st.subheader("🎯 Upload Ground Truth File")
+        ground_truth_file = st.file_uploader(
+            "Choose ground truth file (.json)",
+            type=['json'],
+            key="gt_file"
+        )
+        
+        if ground_truth_file:
+            if st.button("Upload Ground Truth", key="upload_gt"):
+                result = upload_ground_truth_file(ground_truth_file)
+                if result:
+                    st.success(f"✅ Ground truth uploaded successfully!")
+                    st.json(result)
+                    # Force a rerun to display the database description
+                    st.rerun()
+    
+    # Action buttons
+    st.markdown("---")
+    button_col1, button_col2, button_col3 = st.columns(3)
+    
+    with button_col1:
+        if st.button("🔄 Reset Database", key="reset_db"):
+            result = reset_database()
+            if result:
+                st.success("Database reset successfully!")
+                st.session_state.show_description = False
+                st.rerun()
+            else:
+                st.error("Failed to reset database.")
+    
+    with button_col2:
+        if st.button("🔍 Go to Clustering", key="go_clustering"):
+            st.session_state.page = "clustering"
+            st.rerun()
+    
+    with button_col3:
+        if st.button("Show database description",key="show_description"):
+            mock_description = get_database_description()
+            display_database_description(mock_description)
+    
 
-with col3:
-    st.header("🚀 Actions")
+def clustering_page():
+    """Clustering page with algorithm selection and results"""
+    st.title("🔍 Clustering Analysis")
+    st.markdown("Perform clustering analysis on your database tables using various algorithms.")
     
-    # Upload button
-    upload_button = st.button(
-        "📤 Upload All Files",
-        type="primary",
-        disabled=not (st.session_state.database_files and st.session_state.ground_truth_file),
-        help="Upload all database files and ground truth file to backend",
-        use_container_width=True
-    )
-    
-    # Clear button
-    if st.button("🗑️ Clear All", use_container_width=True):
-        st.session_state.database_files = []
-        st.session_state.ground_truth_file = None
-        st.session_state.upload_completed = False
+    # Back button
+    if st.button("← Back to Welcome", key="back_welcome"):
+        st.session_state.page = "welcome"
         st.rerun()
     
-    # Status indicators
-    st.markdown("### 📊 Status")
+    st.markdown("---")
     
-    if st.session_state.database_files:
-        st.success(f"Database: {len(st.session_state.database_files)} files")
-    else:
-        st.warning("Database: No files")
+    # Clustering method selection
+    st.subheader("⚙️ Select Clustering Method")
     
-    if st.session_state.ground_truth_file:
-        st.success("Ground Truth: Ready")
-    else:
-        st.warning("Ground Truth: Missing")
+    clustering_methods = {
+        "hdbScan": "HDBSCAN - Hierarchical Density-Based Spatial Clustering",
+        # Add more methods here as they become available
+    }
     
-    if st.session_state.upload_completed:
-        st.success("✅ Upload Complete")
-
-# Handle upload
-if upload_button:
-    if not st.session_state.database_files:
-        st.error("❌ Please upload at least one database CSV file")
-    elif not st.session_state.ground_truth_file:
-        st.error("❌ Please upload a ground truth JSON file")
-    else:
-        requests.get(f"{BACKEND_URL}/create-database")
-        # Perform upload
-        st.markdown("---")
-        st.header("📤 Upload Progress")
-        
-        progress_container = st.container()
-        
-        with progress_container:
-            # Create progress tracking
-            total_files = len(st.session_state.database_files) + 1  # +1 for ground truth
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+    selected_method = st.selectbox(
+        "Choose a clustering algorithm:",
+        options=list(clustering_methods.keys()),
+        format_func=lambda x: clustering_methods[x],
+        key="clustering_method"
+    )
+    
+    # Clustering execution
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        if st.button("🚀 Run Clustering", key="run_clustering"):
+            st.session_state.clustering_running = True
+    
+    # Display clustering results
+    if st.session_state.get('clustering_running', False):
+        with st.spinner(f"Running {clustering_methods[selected_method]}..."):
+            result = perform_clustering(selected_method)
             
-            upload_results = {
-                "database_files": [],
-                "ground_truth": None,
-                "errors": []
-            }
-            
-            # Upload database files
-            status_text.text("Uploading database files...")
-            
-            for i, file in enumerate(st.session_state.database_files):
-                try:
-                    file.seek(0)
-                    files = {
-                        "file": (file.name, file.getvalue(), file.type)
-                    }
-                    
-                    response = requests.post(
-                        f"{BACKEND_URL}/upload-database-file",
-                        files=files,
-                        timeout=60
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        upload_results["database_files"].append({
-                            "filename": file.name,
-                            "status": "success",
-                            "details": result
-                        })
-                        st.success(f"✅ {file.name} uploaded successfully")
-                    else:
-                        error_msg = f"Failed to upload {file.name}: {response.text}"
-                        upload_results["errors"].append(error_msg)
-                        st.error(f"❌ {error_msg}")
+            if result:
+                st.success("✅ Clustering completed successfully!")
+                
+                st.subheader("📊 Clustering Results")
+                
+                # Display results in a structured format
+                if isinstance(result, dict):
+                    for level, clusters in result.items():
+                        st.write(f"**Level {level}:**")
                         
-                except Exception as e:
-                    error_msg = f"Error uploading {file.name}: {str(e)}"
-                    upload_results["errors"].append(error_msg)
-                    st.error(f"❌ {error_msg}")
-                
-                # Update progress
-                progress_bar.progress((i + 1) / total_files)
-                time.sleep(0.1)  # Small delay for better UX
-            
-            # Upload ground truth file
-            status_text.text("Uploading ground truth file...")
-            
-            try:
-                file = st.session_state.ground_truth_file
-                file.seek(0)
-                files = {
-                    "file": (file.name, file.getvalue(), file.type)
-                }
-                
-                response = requests.post(
-                    f"{BACKEND_URL}/upload-ground-truth/",
-                    files=files,
-                    timeout=60
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    upload_results["ground_truth"] = {
-                        "filename": file.name,
-                        "status": "success",
-                        "details": result
-                    }
-                    st.success(f"✅ {file.name} uploaded successfully")
+                        if isinstance(clusters, dict):
+                            for cluster_no, table_names in clusters.items():
+                                with st.expander(f"Cluster {cluster_no} ({len(table_names)} tables)"):
+                                    for table_name in table_names:
+                                        st.write(f"• {table_name}")
+                        else:
+                            st.write(clusters)
+                        
+                        st.markdown("---")
                 else:
-                    error_msg = f"Failed to upload ground truth: {response.text}"
-                    upload_results["errors"].append(error_msg)
-                    st.error(f"❌ {error_msg}")
-                    
-            except Exception as e:
-                error_msg = f"Error uploading ground truth: {str(e)}"
-                upload_results["errors"].append(error_msg)
-                st.error(f"❌ {error_msg}")
+                    st.json(result)
+                
+                # Option to download results
+                result_json = json.dumps(result, indent=2)
+                st.download_button(
+                    label="📥 Download Results as JSON",
+                    data=result_json,
+                    file_name=f"clustering_results_{selected_method}.json",
+                    mime="application/json"
+                )
+            else:
+                st.error("❌ Clustering failed. Please check your data and try again.")
             
-            # Complete progress
-            progress_bar.progress(1.0)
-            status_text.text("Upload completed!")
-            
-            # Summary
-            st.markdown("### 📋 Upload Summary")
-            
-            success_count = len(upload_results["database_files"])
-            if upload_results["ground_truth"] and upload_results["ground_truth"]["status"] == "success":
-                success_count += 1
-            
-            col_summary1, col_summary2, col_summary3 = st.columns(3)
-            
-            with col_summary1:
-                st.metric("Total Files", total_files)
-            
-            with col_summary2:
-                st.metric("Successful", success_count)
-            
-            with col_summary3:
-                st.metric("Errors", len(upload_results["errors"]))
-            
-            # Detailed results
-            if upload_results["database_files"]:
-                with st.expander("📊 Database Files Results", expanded=len(upload_results["errors"]) == 0):
-                    for result in upload_results["database_files"]:
-                        st.write(f"**{result['filename']}:** {result['status']}")
-                        if result["status"] == "success" and "details" in result:
-                            details = result["details"]
-                            if "processed_data" in details:
-                                data = details["processed_data"]
-                                st.write(f"  - Rows: {data.get('rows', 'N/A')}")
-                                st.write(f"  - Columns: {data.get('columns', 'N/A')}")
-            
-            if upload_results["ground_truth"]:
-                with st.expander("🎯 Ground Truth Results", expanded=True):
-                    gt = upload_results["ground_truth"]
-                    st.write(f"**{gt['filename']}:** {gt['status']}")
-                    if gt["status"] == "success" and "details" in gt:
-                        details = gt["details"]
-                        st.json(details.get("processed_data", {}))
-            
-            if upload_results["errors"]:
-                with st.expander("❌ Errors", expanded=True):
-                    for error in upload_results["errors"]:
-                        st.error(error)
-            
-            # Mark upload as completed
-            if len(upload_results["errors"]) == 0:
-                st.session_state.upload_completed = True
+            st.session_state.clustering_running = False
 
-# # Footer with backend connection test
-# st.markdown("---")
-# st.subheader("🔧 System Status")
+def main():
+    """Main application function"""
+    
+    # Initialize session state
+    if 'page' not in st.session_state:
+        st.session_state.page = "welcome"
+    
+    # Sidebar navigation
+    st.sidebar.title("🧭 Navigation")
+    page_options = {
+        "welcome": "🏠 Welcome",
+        "clustering": "🔍 Clustering"
+    }
+    
+    selected_page = st.sidebar.radio(
+        "Go to:",
+        options=list(page_options.keys()),
+        format_func=lambda x: page_options[x],
+        index=list(page_options.keys()).index(st.session_state.page)
+    )
+    
+    if selected_page != st.session_state.page:
+        st.session_state.page = selected_page
+        st.rerun()
+    
+    # Display appropriate page
+    if st.session_state.page == "welcome":
+        welcome_page()
+    elif st.session_state.page == "clustering":
+        clustering_page()
 
-# col_status1, col_status2 = st.columns(2)
-
-# with col_status1:
-#     if st.button("🔍 Test Backend Connection"):
-#         try:
-#             response = requests.get(f"{BACKEND_URL}/", timeout=5)
-#             if response.status_code == 200:
-#                 st.success("✅ Backend is reachable!")
-#                 data = response.json()
-#                 st.json(data)
-#             else:
-#                 st.error(f"❌ Backend returned status: {response.status_code}")
-#         except requests.exceptions.ConnectionError:
-#             st.error("❌ Could not connect to backend. Check if the service is running.")
-#         except Exception as e:
-#             st.error(f"❌ Connection error: {str(e)}")
-
-# with col_status2:
-#     st.info(f"**Backend URL:** {BACKEND_URL}")
-#     if st.session_state.database_files or st.session_state.ground_truth_file:
-#         st.info("💡 **Tip:** Files are stored in session. Clear cache if you encounter issues.")
+if __name__ == "__main__":
+    main()
