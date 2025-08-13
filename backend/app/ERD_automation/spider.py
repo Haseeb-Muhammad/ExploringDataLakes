@@ -99,7 +99,6 @@ def spider_algorithm(column_dict):
             if a in inclusion_dict:
                 inclusion_dict[a] = list(set(inclusion_dict[a]).intersection(att))
     
-    print(f"Algorithm completed after {iteration} iterations")
     return inclusion_dict
 
 def filter_inclusion_dependencies(inclusion_dict):
@@ -172,10 +171,3 @@ def find_inclusion_dependencies(output_file="inclusion_dependencies.txt"):
         references = filtered_dict[dependent]
         for reference in sorted(references):
             print(f"  {reference} = {dependent}")
-
-# Example usage
-if __name__ == "__main__":
-    # Example usage - replace with your directory path
-    output_file = "/home/haseeb/Desktop/EKAI/ERD_automation/codes/inclusionDependencyWithSpider/spider_results/northwind.txt"
-# find_inclusion_dependencies(output_file)
-
