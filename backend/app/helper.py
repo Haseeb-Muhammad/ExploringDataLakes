@@ -3,11 +3,14 @@ from openai import OpenAI
 from .compartmentalization.clusterors.HDBScan import HDBScan
 from .compartmentalization.encoders.sentence_transformer import SentenceTransformerEncoder
 import os
+import redis
+
 
 sentence_transformer = SentenceTransformerEncoder()
 hdbscan = HDBScan(encoder=sentence_transformer)
-
 database = Database()
+
+r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
 # Initialize OpenAI client only if API key is available
 api_key = os.getenv("OPENAI_API_KEY")

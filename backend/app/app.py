@@ -6,7 +6,7 @@ import json
 from .Database import Database
 from typing import Optional, Dict, List
 from fastapi import UploadFile
-from .helper import database, hdbscan
+from .helper import database, hdbscan, r
 from .descriptionGeneration.descriptionGeneration import generate_description
 import os
 import logging

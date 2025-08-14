@@ -18,6 +18,7 @@ umap-learn = "^0.5.6"
 openai = "^1.99.5"
 numba = "^0.60.0"
 llvmlite = "^0.43.0"
+redis = {extras = ["hiredis"], version = "^6.4.0"}
 
 [build-system]
 requires = ["poetry-core"]
