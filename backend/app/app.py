@@ -6,10 +6,12 @@ import json
 from .Database import Database
 from typing import Optional, Dict, List
 from fastapi import UploadFile
-from .helper import database, hdbscan
+from .helper import database, hdbscan, r
 from .descriptionGeneration.descriptionGeneration import generate_description
 import os
 import logging
+from .ERD_automation.spider import find_inclusion_dependencies
+
 
 app = FastAPI()
 
@@ -139,3 +141,6 @@ async def cluster(cluster_method: str) -> dict:
     # Ensure numpy types are converted to native Python types
     return jsonable_encoder(result)
 
+@app.get("/saveInclDependencies")
+async def saveInclDependencies():
+    find_inclusion_dependencies()
