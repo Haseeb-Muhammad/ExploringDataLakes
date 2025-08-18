@@ -16,7 +16,6 @@ def load_dataFrames():
     Returns:
         dict: Dictionary mapping 'table.column' to sorted unique values
     """
-    
 
     column_dict = {}
     
@@ -63,6 +62,8 @@ def initialize_inclusion_dict(column_dict):
         inclusion_dict[col] = [other_col for other_col in columns if other_col != col]
     
     return inclusion_dict
+
+
 
 def spider_algorithm(column_dict):
     """
@@ -151,7 +152,7 @@ def write_output(inclusion_dict, output_file):
     
     print(f"Output written to {output_file}")
 
-def find_inclusion_dependencies(output_file="inclusion_dependencies.txt"):
+def find_inclusion_dependencies():
     """
     Main function to find inclusion dependencies from CSV files.
     
@@ -173,9 +174,12 @@ def find_inclusion_dependencies(output_file="inclusion_dependencies.txt"):
     # Filter results
     filtered_dict = filter_inclusion_dependencies(inclusion_dict)
     
-    # Write output
-    write_output(filtered_dict, output_file)
-    
+    # store inds as a dictionary in database 
+    for dependent in sorted(inclusion_dict.keys()):
+            references = inclusion_dict[dependent]
+            for reference in sorted(references):
+                database.inclusion_dependencies.append((reference,dependent))
+    #     
     print(f"Found {sum(len(refs) for refs in filtered_dict.values())} inclusion dependencies")
     
     # Print summary

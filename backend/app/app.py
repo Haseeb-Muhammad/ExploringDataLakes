@@ -69,6 +69,7 @@ async def upload_gt_file(
         dict: Status and keys of the uploaded ground truth data.
     """
     generate_description() # All database files are uplaoded so generate databse descriptions 
+    find_inclusion_dependencies() 
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
     gt_data: dict = json.loads(decoded)

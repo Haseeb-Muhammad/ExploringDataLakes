@@ -27,7 +27,10 @@ class Database:
         redis_port = int(os.getenv("REDIS_PORT", "6379"))
         
         self.r = Redis(host=redis_host, port=redis_port, decode_responses=True)
-    
+        self.inclusion_dependencies = [] # (reference_attribute, dependent_attribute) table_name.column_name
+        self.filtered = []
+        self.primary_keys = {} #table name: (tableName.AttributeName, score)
+
     def store_dataframe_in_redis(self, table_name: str, df: pd.DataFrame):
         """Store a DataFrame in Redis using an improved method that preserves all rows.
         
