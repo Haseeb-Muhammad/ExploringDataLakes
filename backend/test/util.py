@@ -3,6 +3,7 @@ from typing import Dict, List
 from app.helper import database
 import os
 import pandas as pd
+import json
 
 def log_clusters(clusters: dict):
     """Logs the clusters and their contents using the logging module.
@@ -52,14 +53,14 @@ def dummyDatabaseCreation(database_dir):
     Args:
         database_dir (str): The path to the directory containing CSV files representing tables.
 
-    Side Effects:
-        Populates the `database.db_frames` dictionary with DataFrames, using the file name
-        (without extension) as the key.
-
     Example:
         dummyDatabaseCreation('/path/to/database_dir')
     """
     table_names = os.listdir(database_dir)
     for table_name in table_names:
         df = pd.read_csv(os.path.join(database_dir, table_name))
-        database.db_frames[table_name.split(".")[0]] = df
+        
+        for _, row in df.iterrows():
+                row_json = json.dumps(row.to_dict())
+                database.r.lpush(table_name, row_json)
+                

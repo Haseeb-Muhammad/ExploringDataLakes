@@ -4,8 +4,9 @@ import heapq
 from collections import defaultdict
 import pandas as pd
 from ..helper import database
+import json
 
-def load_dataFrames(db_frames:dict):
+def load_dataFrames():
     """
     Load all CSV files from the given directory and extract column data.
     
@@ -15,10 +16,22 @@ def load_dataFrames(db_frames:dict):
     Returns:
         dict: Dictionary mapping 'table.column' to sorted unique values
     """
+    
+
     column_dict = {}
     
-    for table_name, df in db_frames.items():
-            
+    table_names = database.r.keys('*')
+    for table_name in table_names:
+
+        list_items = database.r.lrange(table_name, 0,-1)
+        rows_data = []
+        for i in range(len(list_items)):
+            row_data=json.loads(list_items[i])
+            rows_data.append(row_data)
+
+        # Create DataFrame for analysis
+        df = pd.DataFrame(rows_data)
+
         # Process each column
         for column in df.columns:
             column_key = f"{table_name}.{column}"
@@ -146,7 +159,7 @@ def find_inclusion_dependencies(output_file="inclusion_dependencies.txt"):
         directory_path (str): Path to directory containing CSV files
         output_file (str): Path to output file (default: "inclusion_dependencies.txt")
     """
-    column_dict = load_dataFrames(database.db_frames)
+    column_dict = load_dataFrames()
     
     if not column_dict:
         print("No data loaded. Exiting.")

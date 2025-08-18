@@ -10,12 +10,11 @@ sentence_transformer = SentenceTransformerEncoder()
 hdbscan = HDBScan(encoder=sentence_transformer)
 database = Database()
 
-r = redis.Redis(host="localhost", port=6379, decode_responses=True)
-
 # Initialize OpenAI client only if API key is available
 api_key = os.getenv("OPENAI_API_KEY")
 if api_key:
     llm = OpenAI(api_key=api_key)
+    print(f"LLM is working")
 else:
     llm = None
     print("Warning: OPENAI_API_KEY not set. LLM functionality will be disabled.")
