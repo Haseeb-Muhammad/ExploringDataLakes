@@ -6,12 +6,12 @@ import json
 from .Database import Database
 from typing import Optional, Dict, List
 from fastapi import UploadFile
-from .helper import database, hdbscan, r
+from .helper import database, hdbscan 
 from .descriptionGeneration.descriptionGeneration import generate_description
 import os
 import logging
 from .ERD_automation.spider import find_inclusion_dependencies
-
+import csv
 
 app = FastAPI()
 
@@ -39,12 +39,13 @@ async def upload_db_file(
     Returns:
         dict: A message indicating the backend is working.
     """
+    
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
     df: pd.DataFrame = pd.read_csv(StringIO(decoded))
     table_name = file.filename.rsplit(".",1)[0]
-    database.db_frames[table_name] = df
-    
+    database.store_dataframe_in_redis(table_name=table_name, df = df)
+
     return {
             "message": "Database file uploaded successfully",
             "filename": file.filename,
@@ -77,7 +78,6 @@ async def upload_gt_file(
             "status": "success",
             "filename": file.filename,
             "keys": list(gt_data.keys()),
-            "tables_count": len(database.db_frames),
             "description_generated": "error" not in database.db_description
     }
 
@@ -88,13 +88,11 @@ def get_database_description():
 @app.get("/reset-database")
 def reset_database():
     database.db_description.clear()
-    database.db_frames.clear()
     database.gt.clear()
     return {
             "status": "success",
             "message": "Database reset successfully",
             "cleared": {
-                "db_frames": True,
                 "ground_truth": True,
                 "descriptions": True
             }
