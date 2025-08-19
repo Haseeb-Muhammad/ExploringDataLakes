@@ -135,23 +135,6 @@ def filter_inclusion_dependencies(inclusion_dict):
     
     return filtered_dict
 
-def write_output(inclusion_dict, output_file):
-    """
-    Write inclusion dependencies to output file in the specified format.
-    
-    Args:
-        inclusion_dict (dict): Dictionary of inclusion dependencies
-        output_file (str): Path to output file
-    """
-    with open(output_file, 'w') as f:        
-        # Sort for consistent output
-        for dependent in sorted(inclusion_dict.keys()):
-            references = inclusion_dict[dependent]
-            for reference in sorted(references):
-                f.write(f"{reference}={dependent}\n")
-    
-    print(f"Output written to {output_file}")
-
 def find_inclusion_dependencies():
     """
     Main function to find inclusion dependencies from CSV files.
@@ -174,17 +157,12 @@ def find_inclusion_dependencies():
     # Filter results
     filtered_dict = filter_inclusion_dependencies(inclusion_dict)
     
-    # store inds as a dictionary in database 
+    # store inds as a list of tuples in database 
     for dependent in sorted(inclusion_dict.keys()):
             references = inclusion_dict[dependent]
             for reference in sorted(references):
                 database.inclusion_dependencies.append((reference,dependent))
+    database.filtered = database.inclusion_dependencies
     #     
     print(f"Found {sum(len(refs) for refs in filtered_dict.values())} inclusion dependencies")
-    
-    # Print summary
-    print("\nSummary of inclusion dependencies:")
-    for dependent in sorted(filtered_dict.keys()):
-        references = filtered_dict[dependent]
-        for reference in sorted(references):
-            print(f"  {reference} = {dependent}")
+   
