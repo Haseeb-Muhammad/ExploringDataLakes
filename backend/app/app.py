@@ -11,6 +11,7 @@ from .descriptionGeneration.descriptionGeneration import generate_description
 import os
 import logging
 from .ERD_automation.spider import find_inclusion_dependencies
+from .ERD_automation.primary_key_extraction import find_pks
 import csv
 
 app = FastAPI()
@@ -143,3 +144,7 @@ async def cluster(cluster_method: str) -> dict:
 @app.get("/saveInclDependencies")
 async def saveInclDependencies():
     find_inclusion_dependencies()
+
+@app.get("/getPrimaryKeys")
+async def getPrimaryKeys():
+    find_pks()

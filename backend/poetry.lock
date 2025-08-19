@@ -179,6 +179,28 @@ files = [
 ]
 
 [[package]]
+name = "datasketch"
+version = "1.6.5"
+description = "Probabilistic data structures for processing and searching very large datasets"
+optional = false
+python-versions = "*"
+files = [
+    {file = "datasketch-1.6.5-py3-none-any.whl", hash = "sha256:59311b2925b2f37536e9f7c2f46bbc25e8e54379c8635a3fa7ca55d2abb66d1b"},
+    {file = "datasketch-1.6.5.tar.gz", hash = "sha256:ba2848cb74f23d6d3dd444cf24edcbc47b1c34a171b1803231793ed4d74d4fcf"},
+]
+
+[package.dependencies]
+numpy = ">=1.11"
+scipy = ">=1.0.0"
+
+[package.extras]
+benchmark = ["SetSimilaritySearch (>=0.1.7)", "matplotlib (>=3.1.2)", "nltk (>=3.4.5)", "pandas (>=0.25.3)", "pyfarmhash (>=0.2.2)", "pyhash (>=0.9.3)", "scikit-learn (>=0.21.3)", "scipy (>=1.3.3)"]
+cassandra = ["cassandra-driver (>=3.20)"]
+experimental-aio = ["aiounittest", "motor"]
+redis = ["redis (>=2.10.0)"]
+test = ["cassandra-driver (>=3.20)", "coverage", "mock (>=2.0.0)", "mockredispy", "nose (>=1.3.7)", "nose-exclude (>=0.5.0)", "pymongo (>=3.9.0)", "pytest", "redis (>=2.10.0)"]
+
+[[package]]
 name = "distro"
 version = "1.9.0"
 description = "Distro - an OS platform information API"
@@ -2288,4 +2310,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "c5641dea2c441de16fbdeae22477cdb1236bbba697e75a9f98ab5df0af3b7c5c"
+content-hash = "69d5669244e9cdc75eaa305f528a5260dda399d09c82e45c83b1f452d3ba4c22"

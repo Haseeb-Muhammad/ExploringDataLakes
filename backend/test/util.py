@@ -59,7 +59,7 @@ def dummyDatabaseCreation(database_dir):
     table_names = os.listdir(database_dir)
     for table_name in table_names:
         df = pd.read_csv(os.path.join(database_dir, table_name))
-        
+        table_name = table_name.split(".")[0]
         for _, row in df.iterrows():
                 row_json = json.dumps(row.to_dict())
                 database.r.lpush(table_name, row_json)
