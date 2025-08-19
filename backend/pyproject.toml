@@ -20,6 +20,7 @@ numba = "^0.60.0"
 llvmlite = "^0.43.0"
 redis = {extras = ["hiredis"], version = "^6.4.0"}
 datasketch = "^1.6.5"
+fuzzywuzzy = "^0.18.0"
 
 [build-system]
 requires = ["poetry-core"]
