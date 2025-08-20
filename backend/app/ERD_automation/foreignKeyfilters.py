@@ -5,6 +5,17 @@ import pandas as pd
 from .ind import IND
 
 def get_INDs():
+    """Constructs IND (Inclusion Dependency) objects for filtered column pairs.
+
+    This function retrieves all table names from the Redis database, loads their rows,
+    and creates Attribute objects for each column. It then constructs IND objects for
+    each filtered inclusion dependency pair found in `database.filtered`, using the
+    corresponding Attribute objects as dependent and reference attributes.
+
+    Returns:
+        list: A list of IND objects, each representing an inclusion dependency between
+            a dependent and a reference attribute.
+    """
     table_names = database.r.keys('*')
     attributes = {}
 
@@ -36,24 +47,16 @@ def get_INDs():
     return inds
 
 def prefiltering():
-    """
-    Filter inclusion dependencies based on primary key and null value criteria.
-    
-    Parameters
-    ----------
-    inds : list of IND
-        List of inclusion dependency objects to filter
-        
-    Returns
-    -------
-    list of IND
-        Filtered list of inclusion dependencies that meet criteria:
-        - Reference attribute is a primary key
-        - Neither dependent nor reference is all null values
-        
-    Notes
-    -----
-    Uses global pk_table dictionary for primary key lookup
+    """Filters INDs to retain only valid foreign key candidates.
+
+    This function retrieves all INDs, then prunes them by checking two conditions:
+    1. The reference attribute must be a primary key in its table.
+    2. Neither the dependent nor the reference attribute consists entirely of null values.
+
+    Only INDs meeting both criteria are retained.
+
+    Returns:
+        list: A list of pruned IND objects that are valid foreign key candidates.
     """
     inds = get_INDs()
 

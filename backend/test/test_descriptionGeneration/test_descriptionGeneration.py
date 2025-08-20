@@ -65,7 +65,7 @@ def main():
     args = parse_args()
 
     dummyDatabaseCreation(database_dir=args.database_dir)
-    generate_description()
+    database.db_description = generate_description()
 
     logging.info("Testing Dataset Description Generation")
     tables = database.db_description["tables"]

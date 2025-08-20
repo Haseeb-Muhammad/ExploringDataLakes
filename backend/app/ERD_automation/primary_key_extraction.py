@@ -4,6 +4,18 @@ import pandas as pd
 from .attribute import Attribute
 
 def find_pks():
+    """Identifies primary key candidates for each table in the database.
+
+    This function retrieves all table names from the Redis database, loads their rows,
+    and analyzes each column to determine its suitability as a primary key using the
+    Attribute class. The column with the highest primary key score (`pkScore`) for each
+    table is selected as the primary key candidate.
+
+    Returns:
+        dict: A dictionary mapping each table name to a tuple containing the full
+            column name (in the format "table.column") and its primary key score.
+
+    """
     table_names = database.r.keys('*')
     attributes = {}
 
@@ -35,4 +47,4 @@ def find_pks():
         if not current_pk or current_pk[1] < value.pkScore:
             pk_table[table_name] = (value.fullName, value.pkScore)
 
-    database.primary_keys = pk_table
+    return pk_table

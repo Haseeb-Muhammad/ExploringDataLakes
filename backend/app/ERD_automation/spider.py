@@ -7,14 +7,17 @@ from ..helper import database
 import json
 
 def load_dataFrames():
-    """
-    Load all CSV files from the given directory and extract column data.
-    
-    Args:
-        directory_path (str): Path to directory containing CSV files
-        
+    """Loads data from all tables in the Redis database into column-wise dictionaries.
+
+    This function retrieves all table names from the Redis database, loads their rows,
+    and constructs a dictionary mapping each column (qualified by table name) to its
+    sorted list of unique, non-null values. The function prints the number of unique
+    values loaded for each column.
+
     Returns:
-        dict: Dictionary mapping 'table.column' to sorted unique values
+        dict: A dictionary where each key is a string in the format "table.column"
+            and each value is a sorted list of unique, non-null values from that column.
+
     """
 
     column_dict = {}
@@ -136,21 +139,23 @@ def filter_inclusion_dependencies(inclusion_dict):
     return filtered_dict
 
 def find_inclusion_dependencies():
-    """
-    Main function to find inclusion dependencies from CSV files.
-    
-    Args:
-        directory_path (str): Path to directory containing CSV files
-        output_file (str): Path to output file (default: "inclusion_dependencies.txt")
+    """Finds and stores inclusion dependencies among columns in all database tables.
+
+    This function loads data from all tables in the Redis database, computes inclusion
+    dependencies between columns using the Spider algorithm, filters the results to
+    remove self-references and empty lists, and stores the discovered inclusion
+    dependencies as a list of tuples in the database object.
+
+    The inclusion dependencies are stored in `database.inclusion_dependencies` as a list
+    of (reference_column, dependent_column) tuples, and the filtered results are stored
+    in `database.filtered`.
+
+    Returns:
+        None
+
     """
     column_dict = load_dataFrames()
-    
-    if not column_dict:
-        print("No data loaded. Exiting.")
-        return
-    
-    print(f"Loaded {len(column_dict)} columns from CSV files")
-    
+     
     # Run Spider algorithm
     inclusion_dict = spider_algorithm(column_dict)
     
@@ -163,6 +168,4 @@ def find_inclusion_dependencies():
             for reference in sorted(references):
                 database.inclusion_dependencies.append((reference,dependent))
     database.filtered = database.inclusion_dependencies
-    #     
-    print(f"Found {sum(len(refs) for refs in filtered_dict.values())} inclusion dependencies")
-   
+    

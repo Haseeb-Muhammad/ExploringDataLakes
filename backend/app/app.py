@@ -30,17 +30,21 @@ logging.basicConfig(
 @app.post("/upload-database-file")
 async def upload_db_file(
     file: UploadFile
-) -> dict:
-    """Uploads a CSV file and appends its contents as a DataFrame to the database.
+) -> dict:    
+    """
+    Asynchronously uploads a database file, reads its contents as a CSV, and stores the resulting DataFrame in Redis.
 
     Args:
-        file (UploadFile): The uploaded CSV file.
-        database (Database): The database instance.
+        file (UploadFile): The uploaded file object, expected to be a CSV file.
 
     Returns:
-        dict: A message indicating the backend is working.
+        dict: A dictionary containing a success message, the original filename, the derived table name, 
+              the number of rows and columns, and the list of column names.
+
+    Raises:
+        UnicodeDecodeError: If the file cannot be decoded as UTF-8.
+        pd.errors.ParserError: If the file cannot be parsed as a CSV.
     """
-    
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
     df: pd.DataFrame = pd.read_csv(StringIO(decoded))
@@ -60,16 +64,17 @@ async def upload_db_file(
 async def upload_gt_file(
     file: UploadFile
 ) -> dict:
-    """Uploads a ground truth JSON file and stores its contents in the database.
-
-    Args:
-        file (UploadFile): The uploaded JSON file.
-        database (Database): The database instance.
-
-    Returns:
-        dict: Status and keys of the uploaded ground truth data.
     """
-    generate_description() # All database files are uplaoded so generate databse descriptions 
+    Asynchronously uploads and processes a ground truth (GT) file.
+    Reads the uploaded file, decodes its contents, parses it as JSON, and stores the resulting dictionary in the database.
+    Also triggers the generation of database descriptions and inclusion dependency checks.
+    Args:
+        file (UploadFile): The uploaded file object containing GT data in JSON format.
+    Returns:
+        dict: A dictionary containing the status of the upload, the filename, the keys from the GT data,
+              and a flag indicating whether the database description was generated successfully.
+    """
+    database.db_description = generate_description() # All database files are uplaoded so generate databse descriptions 
     find_inclusion_dependencies() 
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
@@ -85,10 +90,23 @@ async def upload_gt_file(
 
 @app.get("/database-description")
 def get_database_description():
+    """
+    Retrieves the description of the database.
+
+    Returns:
+        str: The description of the database from the `db_description` attribute.
+    """
     return database.db_description
 
 @app.get("/reset-database")
 def reset_database():
+    """
+    Resets the in-memory database by clearing the descriptions and ground truth data.
+
+    Returns:
+        dict: A dictionary containing the status of the operation, a success message,
+              and details about which components were cleared.
+    """
     database.db_description.clear()
     database.gt.clear()
     return {
@@ -147,4 +165,4 @@ async def saveInclDependencies():
 
 @app.get("/getPrimaryKeys")
 async def getPrimaryKeys():
-    find_pks()
+    database.primary_keys = find_pks()
