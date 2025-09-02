@@ -52,6 +52,8 @@ def main():
     logging.info(f"Length of Inclusion Dependencies after primary key check: {len(database.filtered)}")
     null_check()
     logging.info(f"Length of Inclusion Dependencies after nan column check: {len(database.filtered)}")
+    auto_incremental_pk_check()
+    logging.info(f"Length of Inclusion Dependencies after sub sequence column check: {len(database.filtered)}")
 
 if __name__ == "__main__":
     main()

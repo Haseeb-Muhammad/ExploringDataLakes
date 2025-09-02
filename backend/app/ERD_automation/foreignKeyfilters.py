@@ -3,6 +3,7 @@ from ..helper import database
 import json
 import pandas as pd
 from .ind import IND
+import numpy as np
 
 def get_INDs():
     """Constructs IND (Inclusion Dependency) objects for filtered column pairs.
@@ -46,7 +47,7 @@ def get_INDs():
 
     return inds
 
-def update_databae_filtered_inds(inds: list[IND]):
+def update_database_filtered_inds(inds: list[IND]):
     """
     Updates the global database's filtered list with tuples of full names from the provided IND objects.
 
@@ -84,7 +85,7 @@ def primary_key_check():
         if is_pk:
             pruned_inds.append(ind)
 
-    update_databae_filtered_inds(inds=pruned_inds)
+    update_database_filtered_inds(inds=pruned_inds)
 
 def null_check():
     """
@@ -109,7 +110,35 @@ def null_check():
         if (not reference_all_null) and (not dependent_all_null):
             pruned_inds.append(ind)
     
-    update_databae_filtered_inds(inds=pruned_inds)
+    update_database_filtered_inds(inds=pruned_inds)
+
+def auto_incremental_pk_check():
+    """
+    Filters out inclusion dependencies (INDs) where the dependent values are a contiguous subset of the reference values,
+    which is a common pattern for auto-incremental primary keys.
+
+    This function retrieves a list of INDs, checks each one to see if the dependent values appear as a contiguous subset
+    within the reference values, and prunes those that do. The filtered list is then updated in the database.
+
+    Returns:
+        None
+    """
+    inds = get_INDs()
+    pruned_inds = []
+    for ind in inds:
+        i =0
+        length_dependent = len(ind.dependent.values)
+        length_reference = len(ind.reference.values)
+        subset = False
+        while i <= (length_reference-length_dependent):
+            if np.array_equal(ind.reference.values[i:i+length_dependent], ind.dependent.values):
+                subset = True
+                break
+            i+=1
+        if not subset:
+            pruned_inds.append(ind)
+    update_database_filtered_inds(inds=pruned_inds)
+
     
 
 
