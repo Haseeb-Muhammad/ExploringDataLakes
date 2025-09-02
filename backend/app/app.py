@@ -159,10 +159,12 @@ async def cluster(cluster_method: str) -> dict:
     # Ensure numpy types are converted to native Python types
     return jsonable_encoder(result)
 
+@app.get("/getPrimaryKeys")
+async def getPrimaryKeys():
+    database.primary_keys = find_pks()
+
 @app.get("/saveInclDependencies")
 async def saveInclDependencies():
     find_inclusion_dependencies()
 
-@app.get("/getPrimaryKeys")
-async def getPrimaryKeys():
-    database.primary_keys = find_pks()
+

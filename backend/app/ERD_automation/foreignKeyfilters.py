@@ -140,6 +140,40 @@ def auto_incremental_pk_check():
             pruned_inds.append(ind)
     update_database_filtered_inds(inds=pruned_inds)
 
+def multi_dependence_check():
+    """
+    Filters out inclusion dependencies (INDs) that have dependents referenced by multiple INDs.
+
+    This function retrieves a list of INDs, checks for dependents that are referenced by more than one IND,
+    and prunes those INDs from the list. Only INDs with unique dependents are retained. The filtered list
+    is then updated in the database.
+
+    Returns:
+        None
+    """
+    inds = get_INDs()
+    pruned_inds = []
+    for ind in inds:
+        multi_referenced = False
+        for ind1 in inds:
+            if ind!= ind1 and ind.dependent == ind1.dependent:
+                multi_referenced = True
+        if not multi_referenced:
+            pruned_inds.append(ind)
+    update_database_filtered_inds(inds=pruned_inds)
+
+def dependent_referencing_check():
+    inds = get_INDs()
+    pruned_inds = []
+    for ind in inds:
+        dependent_referencing=False
+        for ind1 in inds:
+            if (ind!=ind1) and (ind.dependent == ind1.reference):
+                dependent_referencing=True
+        if not dependent_referencing:
+            pruned_inds.append(ind)
+    update_database_filtered_inds(inds=pruned_inds)
+    
     
 
 

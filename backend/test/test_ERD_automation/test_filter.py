@@ -52,8 +52,12 @@ def main():
     # logging.info(f"Length of Inclusion Dependencies after primary key check: {len(database.filtered)}")
     # null_check()
     # logging.info(f"Length of Inclusion Dependencies after nan column check: {len(database.filtered)}")
-    auto_incremental_pk_check()
-    logging.info(f"Length of Inclusion Dependencies after sub sequence column check: {len(database.filtered)}")
+    # auto_incremental_pk_check()
+    # logging.info(f"Length of Inclusion Dependencies after sub sequence column check: {len(database.filtered)}")
+    # multi_dependence_check()
+    # logging.info(f"Length of Inclusion Dependencies after multi_dependence column check: {len(database.filtered)}")
+    dependent_referencing_check()
+    logging.info(f"Length of Inclusion Dependencies after dependent_referencing column check: {len(database.filtered)}")
     clear_redis_database()
 
 if __name__ == "__main__":

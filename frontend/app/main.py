@@ -4,7 +4,7 @@ import json
 from typing import Dict, Any
 import pandas as pd
 from util import *
-
+from erd_visualizer import visualize_database_relationships
 # Configure the page
 st.set_page_config(
     page_title="Data Lake Explorer",
