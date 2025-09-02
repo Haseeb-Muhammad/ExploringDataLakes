@@ -46,6 +46,11 @@ def get_INDs():
 
     return inds
 
+def update_databae_filtered_inds(inds: list[IND]):
+    database.filtered = []
+    for ind in inds:
+        database.filtered.append((ind.reference.fullName, ind.dependent.fullName))
+
 def prefiltering():
     """Filters INDs to retain only valid foreign key candidates.
 
@@ -81,3 +86,31 @@ def prefiltering():
             pruned_inds.append(ind)
             
     return pruned_inds
+
+def primary_key_check():
+    """
+    Filters and retains only those INDs (inferred or identified dependencies) where the reference variable is a primary key.
+
+    This function retrieves a list of INDs, checks if the reference variable in each IND is a primary key in the database,
+    and appends those INDs to a pruned list if the condition is met. The filtered list is then used to update the database's
+    filtered INDs.
+
+    Returns:
+        None
+    """
+    inds = get_INDs()
+    pruned_inds = []
+    print(database.primary_keys)
+    for ind in inds:
+        #Checking if reference variable is a primary key
+        is_pk = False
+        if database.primary_keys[ind.reference.table_name][0] == ind.reference.fullName:
+            is_pk=True
+
+        if is_pk:
+            pruned_inds.append(ind)
+
+    update_databae_filtered_inds(pruned_inds)
+
+
+
