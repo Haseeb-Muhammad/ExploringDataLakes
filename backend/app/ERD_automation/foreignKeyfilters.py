@@ -47,45 +47,20 @@ def get_INDs():
     return inds
 
 def update_databae_filtered_inds(inds: list[IND]):
+    """
+    Updates the global database's filtered list with tuples of full names from the provided IND objects.
+
+    Args:
+        inds (list[IND]): A list of IND (Inclusion Dependency) objects. Each IND object is expected to have
+            'reference' and 'dependent' attributes, both of which have a 'fullName' attribute.
+
+    Side Effects:
+        Modifies the global 'database.filtered' list by clearing it and appending tuples containing the
+        full names of the reference and dependent columns from each IND in the input list.
+    """
     database.filtered = []
     for ind in inds:
         database.filtered.append((ind.reference.fullName, ind.dependent.fullName))
-
-def prefiltering():
-    """Filters INDs to retain only valid foreign key candidates.
-
-    This function retrieves all INDs, then prunes them by checking two conditions:
-    1. The reference attribute must be a primary key in its table.
-    2. Neither the dependent nor the reference attribute consists entirely of null values.
-
-    Only INDs meeting both criteria are retained.
-
-    Returns:
-        list: A list of pruned IND objects that are valid foreign key candidates.
-    """
-    inds = get_INDs()
-
-    pruned_inds = []
-    for ind in inds:
-        #Checking if reference variable is a primary key
-        is_pk = False
-        if database.primary_keys[ind.reference.table_name][0] == ind.reference.fullName:
-            is_pk=True
-
-        #Checking if either all of the dependent or reference attribute is null
-        dependent_all_null = True
-        reference_all_null = True
-        for value in ind.reference.values:
-            if value != "nan":
-                reference_all_null = False
-        for value in ind.dependent.values:
-            if value !="nan":
-                dependent_all_null = False
-        
-        if is_pk and (not reference_all_null) and (not dependent_all_null):
-            pruned_inds.append(ind)
-            
-    return pruned_inds
 
 def primary_key_check():
     """
@@ -100,7 +75,6 @@ def primary_key_check():
     """
     inds = get_INDs()
     pruned_inds = []
-    print(database.primary_keys)
     for ind in inds:
         #Checking if reference variable is a primary key
         is_pk = False
@@ -110,7 +84,33 @@ def primary_key_check():
         if is_pk:
             pruned_inds.append(ind)
 
-    update_databae_filtered_inds(pruned_inds)
+    update_databae_filtered_inds(inds=pruned_inds)
+
+def null_check():
+    """
+    Filters and prunes INDs (Inclusion Dependencies) where all values in either the reference or dependent columns are "nan".
+    This function retrieves a list of INDs, checks each IND to determine if all values in either the reference or dependent columns are "nan".
+    If neither column is entirely "nan", the IND is retained. The filtered list of INDs is then updated in the database.
+    Returns:
+        None
+    """
+    inds = get_INDs()
+    pruned_inds = []
+    for ind in inds:
+        dependent_all_null = True
+        reference_all_null = True
+        for value in ind.reference.values:
+            if value != "nan":
+                reference_all_null = False
+        for value in ind.dependent.values:
+            if value !="nan":
+                dependent_all_null = False
+        
+        if (not reference_all_null) and (not dependent_all_null):
+            pruned_inds.append(ind)
+    
+    update_databae_filtered_inds(inds=pruned_inds)
+    
 
 
 
