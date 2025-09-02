@@ -42,7 +42,6 @@ def load_dataFrames():
             sorted_values = sorted(unique_values)
             
             column_dict[column_key] = sorted_values
-            print(f"Loaded {len(sorted_values)} unique values from {column_key}")
     
     return column_dict
 
@@ -84,22 +83,19 @@ def spider_algorithm(column_dict):
     # Initialize min heap with all values from all columns
     min_heap = []
     
-    print("Building heap...")
     for column in column_dict:
         vals = column_dict[column]
         for val in vals:
             tup = (str(val), column)
             heapq.heappush(min_heap, tup)
-    
-    print(f"Heap initialized with {len(min_heap)} elements")
-    
+        
     # Process heap
     iteration = 0
     while min_heap:
         iteration += 1
         if iteration % 1000 == 0:
-            print(f"Processing iteration {iteration}, heap size: {len(min_heap)}")
-        
+            # Add a loading bar in future
+            pass        
         # Get the smallest value in the heap
         att = []
         current_smallest, var = heapq.heappop(min_heap)
