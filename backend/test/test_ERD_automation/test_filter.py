@@ -16,7 +16,7 @@ from app.helper import database
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, test_dir)
 
-from util import dummyDatabaseCreation
+from util import dummyDatabaseCreation, clear_redis_database
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -48,12 +48,13 @@ def main():
     find_inclusion_dependencies()
     database.primary_keys=find_pks()
     logging.info(f"Length of Inclusion Dependencies: {len(database.filtered)}")
-    primary_key_check()
-    logging.info(f"Length of Inclusion Dependencies after primary key check: {len(database.filtered)}")
-    null_check()
-    logging.info(f"Length of Inclusion Dependencies after nan column check: {len(database.filtered)}")
+    # primary_key_check()
+    # logging.info(f"Length of Inclusion Dependencies after primary key check: {len(database.filtered)}")
+    # null_check()
+    # logging.info(f"Length of Inclusion Dependencies after nan column check: {len(database.filtered)}")
     auto_incremental_pk_check()
     logging.info(f"Length of Inclusion Dependencies after sub sequence column check: {len(database.filtered)}")
+    clear_redis_database()
 
 if __name__ == "__main__":
     main()

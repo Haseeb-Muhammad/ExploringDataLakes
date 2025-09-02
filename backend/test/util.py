@@ -63,4 +63,14 @@ def dummyDatabaseCreation(database_dir):
         for _, row in df.iterrows():
                 row_json = json.dumps(row.to_dict())
                 database.r.lpush(table_name, row_json)
-                
+
+def clear_redis_database():
+    """
+    Delete all keys in the current Redis database.
+    """
+    try:
+        # Delete all keys in the current database
+        database.r.flushdb()
+        print("Successfully cleared all keys from Redis database")
+    except Exception as e:
+        print(f"Error clearing Redis database: {e}")

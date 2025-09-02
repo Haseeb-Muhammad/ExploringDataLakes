@@ -42,6 +42,7 @@ def load_dataFrames():
             sorted_values = sorted(unique_values)
             
             column_dict[column_key] = sorted_values
+            print(f"Loaded {len(sorted_values)} unique values from {column_key}")
     
     return column_dict
 
@@ -65,8 +66,6 @@ def initialize_inclusion_dict(column_dict):
     
     return inclusion_dict
 
-
-
 def spider_algorithm(column_dict):
     """
     Spider algorithm implementation using min-heap to find inclusion dependencies.
@@ -88,6 +87,9 @@ def spider_algorithm(column_dict):
         for val in vals:
             tup = (str(val), column)
             heapq.heappush(min_heap, tup)
+    
+    print(f"Heap initialized with {len(min_heap)} elements")
+
         
     # Process heap
     iteration = 0
@@ -134,6 +136,8 @@ def filter_inclusion_dependencies(inclusion_dict):
     
     return filtered_dict
 
+
+
 def find_inclusion_dependencies():
     """Finds and stores inclusion dependencies among columns in all database tables.
 
@@ -150,18 +154,37 @@ def find_inclusion_dependencies():
         None
 
     """
+    clear_redis_database
     column_dict = load_dataFrames()
+    print(f"Loaded {len(column_dict)} columns from CSV files")
+
      
     # Run Spider algorithm
     inclusion_dict = spider_algorithm(column_dict)
     
     # Filter results
     filtered_dict = filter_inclusion_dependencies(inclusion_dict)
-    
+    print(f"Found {sum(len(refs) for refs in filtered_dict.values())} inclusion dependencies")
+
     # store inds as a list of tuples in database 
-    for dependent in sorted(inclusion_dict.keys()):
-            references = inclusion_dict[dependent]
+    for dependent in sorted(filtered_dict.keys()):
+            references = filtered_dict[dependent]
             for reference in sorted(references):
                 database.inclusion_dependencies.append((reference,dependent))
+                print(f"  {reference} = {dependent}")
+
+
     database.filtered = database.inclusion_dependencies
-    
+
+def clear_redis_database():
+    """
+    Delete all keys in the current Redis database.
+    """
+    try:
+        # Delete all keys in the current database
+        database.r.flushdb()
+        print("Successfully cleared all keys from Redis database")
+    except Exception as e:
+        print(f"Error clearing Redis database: {e}")
+
+

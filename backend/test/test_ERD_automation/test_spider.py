@@ -14,7 +14,9 @@ from app.helper import database
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, test_dir)
 
-from util import dummyDatabaseCreation
+from util import dummyDatabaseCreation, clear_redis_database
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -51,7 +53,7 @@ def main():
         Run this script from the command line to generate and log database descriptions:
             $ python test_descriptionGeneration.py --database_dir /path/to/database
     """
-    log_path = os.path.join(os.path.dirname(__file__), "TestingDescriptionGeneration.log")
+    log_path = os.path.join(os.path.dirname(__file__), "TestingSpider.log")
     logging.basicConfig(
                     filename=log_path,
                     encoding="utf-8",
@@ -63,9 +65,10 @@ def main():
     )
 
     args = parse_args()
-
+    clear_redis_database()
     dummyDatabaseCreation(database_dir=args.database_dir)
-    find_inclusion_dependencies(output_file="logging.txt")
+    find_inclusion_dependencies()
+    logging.info(f"Number of INDs from spider: {len(database.inclusion_dependencies)}")
 
 if __name__ == "__main__":
     main()

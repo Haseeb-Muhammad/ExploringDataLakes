@@ -133,6 +133,7 @@ def auto_incremental_pk_check():
         while i <= (length_reference-length_dependent):
             if np.array_equal(ind.reference.values[i:i+length_dependent], ind.dependent.values):
                 subset = True
+                print(f"subset found {ind.reference.fullName} == {ind.dependent.fullName}")
                 break
             i+=1
         if not subset:
