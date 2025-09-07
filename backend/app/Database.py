@@ -42,3 +42,7 @@ class Database:
         for _, row in df.iterrows():
             row_json = json.dumps(row.to_dict())
             self.r.lpush(table_name, row_json)
+    
+    def get_table_names(self):
+        table_names = self.r.keys('*')
+        return
