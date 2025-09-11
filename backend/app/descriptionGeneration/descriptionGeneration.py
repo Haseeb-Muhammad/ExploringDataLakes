@@ -62,16 +62,18 @@ def extract_schema_from_redis(sample_size=3):
 
 
 def generate_description():
-    """Generates and stores a JSON description of the database schema using an LLM.
+    """Generates a database description using schema metadata and an LLM.
 
-    This function extracts the schema and sample data from the database, formats a prompt
-    using a documentation template, and sends it to a language model to generate a
-    structured JSON description. The resulting description is stored in the database's
-    `db_description` attribute.
+    This function extracts schema and sample data from all tables stored in Redis,
+    formats the metadata into a prompt using a documentation template, and sends
+    the prompt to a language model to generate a structured database description.
 
     Returns:
-        None
+        dict: A dictionary containing the generated database description as returned
+            by the language model. The structure and content depend on the prompt
+            template and the model's output.
     """
+    
     database_meta_data = extract_schema_from_redis(sample_size=3)
 
     formatted_prompt = DOCUMENTATION_PROMPT_TEMPLATE.format(
@@ -83,6 +85,5 @@ def generate_description():
         input=formatted_prompt
     )   
 
-    print(f"{response.output_text}")
-
-    database.db_description = json.loads(response.output_text)
+    db_description = json.loads(response.output_text)
+    return db_description

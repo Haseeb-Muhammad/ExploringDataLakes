@@ -6,44 +6,41 @@ from collections import defaultdict
 from typing import List,Dict
 
 class HDBScan(Clusteror):
-    """HDBScan clustering class for text data.
 
-    This class applies the HDBSCAN clustering algorithm to text data after encoding
-    it into embeddings using a provided encoder. It inherits from the `Clusteror` base class.
-
-    Attributes:
-        encoder (Encoder): The encoder used to convert text into embeddings.
-        clusterer (hdbscan.HDBSCAN): The HDBSCAN clustering instance.
-    """
-
-    def __init__(self, encoder: Encoder, min_cluster_size: int = 2):
-        """Initializes the HDBScan clusteror.
-
+    def __init__(self, encoder: Encoder):
+        """Initializes the HDBScan clusterer.
+        
         Args:
-            encoder (Encoder): An encoder object that provides an `encode` method to convert text to embeddings.
-            min_cluster_size (int, optional): The minimum size of clusters; smaller clusters will be considered noise. Defaults to 2.
+            encoder (Encoder): The encoder to use for converting text to embeddings.
         """
         super().__init__(encoder=encoder)
         self.encoder = encoder
-        self.clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, metric='euclidean')
 
-    def cluster(self, text: List[str]) -> dict:
-        """Clusters a list of text strings using HDBSCAN.
-
-        Encodes the input text into embeddings, fits the HDBSCAN clusterer, and groups
-        the original text by their assigned cluster labels.
-
+    def cluster(self, text: List[str], min_cluster_size: int = 2, metric: str = "euclidean") -> dict:
+        """Clusters text items using the HDBScan algorithm.
+        
+        Takes a list of text items, converts them to embeddings using the configured
+        encoder, and applies HDBScan clustering to group similar items together.
+        
         Args:
-            text (List[str]): A list of text strings to be clustered.
-
+            text (List[str]): List of text items to cluster.
+            min_cluster_size (int, optional): Minimum number of samples in a cluster.
+                Defaults to 2.
+            metric (str, optional): Distance metric to use for clustering. 
+                Defaults to "euclidean".
+        
         Returns:
-            dict: A dictionary with a single key (1) mapping to another dictionary,
-                where each cluster label maps to a list of text strings belonging to that cluster.
+            dict: A dictionary containing clustering results in the format:
+                {1: {cluster_id: [list_of_text_items]}}, where cluster_id -1 
+                represents noise/outlier points.
         """
-        embeddings = self.encoder.encode(text)
-        self.clusterer.fit(embeddings)
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, metric=metric)
 
-        labels = self.clusterer.labels_
+
+        embeddings = self.encoder.encode(text)
+        clusterer.fit(embeddings)
+
+        labels = clusterer.labels_
         
         label_map = defaultdict(list)
         for text_item, label in zip(text, labels):

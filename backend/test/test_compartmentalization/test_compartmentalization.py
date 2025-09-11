@@ -73,7 +73,7 @@ def main():
     args = parse_args()
 
     dummyDatabaseCreation(database_dir=args.database_dir)
-    generate_description()
+    database.db_description = generate_description()
 
     table_names = list(database.db_description["tables"].keys())
     texts = [f"{table_name} : {database.db_description['tables'][table_name]['note']}" for table_name in table_names]  

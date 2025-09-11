@@ -57,10 +57,20 @@ def dummyDatabaseCreation(database_dir):
         dummyDatabaseCreation('/path/to/database_dir')
     """
     table_names = os.listdir(database_dir)
-    for table_name in table_names:
-        df = pd.read_csv(os.path.join(database_dir, table_name))
-        
+    for file_name in table_names:
+        df = pd.read_csv(os.path.join(database_dir, file_name))
+        table_name = file_name.split(".")[0]
         for _, row in df.iterrows():
                 row_json = json.dumps(row.to_dict())
                 database.r.lpush(table_name, row_json)
-                
+
+def clear_redis_database():
+    """
+    Delete all keys in the current Redis database.
+    """
+    try:
+        # Delete all keys in the current database
+        database.r.flushdb()
+        print("Successfully cleared all keys from Redis database")
+    except Exception as e:
+        print(f"Error clearing Redis database: {e}")

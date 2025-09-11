@@ -7,16 +7,18 @@ from ..helper import database
 import json
 
 def load_dataFrames():
-    """
-    Load all CSV files from the given directory and extract column data.
-    
-    Args:
-        directory_path (str): Path to directory containing CSV files
-        
+    """Loads data from all tables in the Redis database into column-wise dictionaries.
+
+    This function retrieves all table names from the Redis database, loads their rows,
+    and constructs a dictionary mapping each column (qualified by table name) to its
+    sorted list of unique, non-null values. The function prints the number of unique
+    values loaded for each column.
+
     Returns:
-        dict: Dictionary mapping 'table.column' to sorted unique values
+        dict: A dictionary where each key is a string in the format "table.column"
+            and each value is a sorted list of unique, non-null values from that column.
+
     """
-    
 
     column_dict = {}
     
@@ -80,7 +82,6 @@ def spider_algorithm(column_dict):
     # Initialize min heap with all values from all columns
     min_heap = []
     
-    print("Building heap...")
     for column in column_dict:
         vals = column_dict[column]
         for val in vals:
@@ -88,14 +89,15 @@ def spider_algorithm(column_dict):
             heapq.heappush(min_heap, tup)
     
     print(f"Heap initialized with {len(min_heap)} elements")
-    
+
+        
     # Process heap
     iteration = 0
     while min_heap:
         iteration += 1
         if iteration % 1000 == 0:
-            print(f"Processing iteration {iteration}, heap size: {len(min_heap)}")
-        
+            # Add a loading bar in future
+            pass        
         # Get the smallest value in the heap
         att = []
         current_smallest, var = heapq.heappop(min_heap)
@@ -134,53 +136,56 @@ def filter_inclusion_dependencies(inclusion_dict):
     
     return filtered_dict
 
-def write_output(inclusion_dict, output_file):
-    """
-    Write inclusion dependencies to output file in the specified format.
-    
-    Args:
-        inclusion_dict (dict): Dictionary of inclusion dependencies
-        output_file (str): Path to output file
-    """
-    with open(output_file, 'w') as f:        
-        # Sort for consistent output
-        for dependent in sorted(inclusion_dict.keys()):
-            references = inclusion_dict[dependent]
-            for reference in sorted(references):
-                f.write(f"{reference}={dependent}\n")
-    
-    print(f"Output written to {output_file}")
 
-def find_inclusion_dependencies(output_file="inclusion_dependencies.txt"):
+
+def find_inclusion_dependencies():
+    """Finds and stores inclusion dependencies among columns in all database tables.
+
+    This function loads data from all tables in the Redis database, computes inclusion
+    dependencies between columns using the Spider algorithm, filters the results to
+    remove self-references and empty lists, and stores the discovered inclusion
+    dependencies as a list of tuples in the database object.
+
+    The inclusion dependencies are stored in `database.inclusion_dependencies` as a list
+    of (reference_column, dependent_column) tuples, and the filtered results are stored
+    in `database.filtered`.
+
+    Returns:
+        None
+
     """
-    Main function to find inclusion dependencies from CSV files.
-    
-    Args:
-        directory_path (str): Path to directory containing CSV files
-        output_file (str): Path to output file (default: "inclusion_dependencies.txt")
-    """
+    # clear_redis_database
     column_dict = load_dataFrames()
-    
-    if not column_dict:
-        print("No data loaded. Exiting.")
-        return
-    
     print(f"Loaded {len(column_dict)} columns from CSV files")
-    
+    database.inclusion_dependencies=[]
+    database.filtered=[]
+
     # Run Spider algorithm
     inclusion_dict = spider_algorithm(column_dict)
     
     # Filter results
     filtered_dict = filter_inclusion_dependencies(inclusion_dict)
-    
-    # Write output
-    write_output(filtered_dict, output_file)
-    
     print(f"Found {sum(len(refs) for refs in filtered_dict.values())} inclusion dependencies")
-    
-    # Print summary
-    print("\nSummary of inclusion dependencies:")
+
+    # store inds as a list of tuples in database 
     for dependent in sorted(filtered_dict.keys()):
-        references = filtered_dict[dependent]
-        for reference in sorted(references):
-            print(f"  {reference} = {dependent}")
+            references = filtered_dict[dependent]
+            for reference in sorted(references):
+                database.inclusion_dependencies.append((reference,dependent))
+                print(f"  {reference} = {dependent}")
+
+
+    database.filtered = database.inclusion_dependencies
+
+def clear_redis_database():
+    """
+    Delete all keys in the current Redis database.
+    """
+    try:
+        # Delete all keys in the current database
+        database.r.flushdb()
+        print("Successfully cleared all keys from Redis database")
+    except Exception as e:
+        print(f"Error clearing Redis database: {e}")
+
+

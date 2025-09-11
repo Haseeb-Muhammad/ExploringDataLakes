@@ -4,6 +4,8 @@ import json
 from typing import Dict, Any
 import pandas as pd
 from util import *
+from erd_visualizer import visualize_database_relationships
+from filtering import create_filter_visualizer
 
 # Configure the page
 st.set_page_config(
@@ -91,7 +93,7 @@ def welcome_page():
     
     # Action buttons
     st.markdown("---")
-    button_col1, button_col2, button_col3 = st.columns(3)
+    button_col1, button_col2, button_col3, button_col4 = st.columns(4)
     
     with button_col1:
         if st.button("🔄 Reset Database", key="reset_db"):
@@ -109,10 +111,14 @@ def welcome_page():
             st.rerun()
     
     with button_col3:
-        if st.button("Show database description",key="show_description"):
+        if st.button("🔧 Go to Filtering", key="go_filtering"):
+            st.session_state.page = "filtering"
+            st.rerun()
+    
+    with button_col4:
+        if st.button("Show database description", key="show_description"):
             mock_description = get_database_description()
             display_database_description(mock_description)
-    
 
 def clustering_page():
     """Clustering page with algorithm selection and results"""
@@ -120,7 +126,7 @@ def clustering_page():
     st.markdown("Perform clustering analysis on your database tables using various algorithms.")
     
     # Back button
-    if st.button("← Back to Welcome", key="back_welcome"):
+    if st.button("← Back to Welcome", key="back_welcome_clustering"):
         st.session_state.page = "welcome"
         st.rerun()
     
@@ -188,6 +194,18 @@ def clustering_page():
             
             st.session_state.clustering_running = False
 
+def filtering_page():
+    """Filtering page for database relationships"""
+    # Back button
+    if st.button("← Back to Welcome", key="back_welcome_filtering"):
+        st.session_state.page = "welcome"
+        st.rerun()
+    
+    st.markdown("---")
+    
+    # Call the filtering functionality
+    create_filter_visualizer()
+
 def main():
     """Main application function"""
     
@@ -199,7 +217,8 @@ def main():
     st.sidebar.title("🧭 Navigation")
     page_options = {
         "welcome": "🏠 Welcome",
-        "clustering": "🔍 Clustering"
+        "clustering": "🔍 Clustering",
+        "filtering": "🔧 Filtering & ERD"
     }
     
     selected_page = st.sidebar.radio(
@@ -218,6 +237,8 @@ def main():
         welcome_page()
     elif st.session_state.page == "clustering":
         clustering_page()
+    elif st.session_state.page == "filtering":
+        filtering_page()
 
 if __name__ == "__main__":
     main()

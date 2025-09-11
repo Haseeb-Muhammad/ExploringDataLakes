@@ -1,7 +1,9 @@
 import requests
 import streamlit as st
 
-API_BASE_URL = "http://backend:8000" 
+# Use the host machine's IP address to access the backend from Docker container
+# Replace with your actual host IP address
+API_BASE_URL = "http://192.168.18.35:8000" 
 
 def perform_clustering(cluster_method: str):
     """Perform clustering using the specified method"""

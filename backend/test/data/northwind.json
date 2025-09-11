@@ -1,0 +1,99 @@
+{
+    "primary_key": {
+        "CATEGORIES": [
+            "CATEGORY_ID"
+        ],
+        "CUSTOMERS": [
+            "CUSTOMER_ID"
+        ],
+        "EMPLOYEES": [
+            "EMPLOYEE_ID"
+        ],
+        "EMPLOYEE_TERRITORIES": [
+            "EMPLOYEE_ID",
+            "TERRITORY_ID"
+        ],
+        "ORDERS": [
+            "ORDER_ID"
+        ],
+        "ORDER_DETAILS": [
+            "ORDER_ID",
+            "PRODUCT_ID"
+        ],
+        "PRODUCTS": [
+            "PRODUCT_ID"
+        ],
+        "REGION": [
+            "REGION_ID"
+        ],
+        "SHIPPERS": [
+            "SHIPPER_ID"
+        ],
+        "SUPPLIERS": [
+            "SUPPLIER_ID"
+        ],
+        "TERRITORIES": [
+            "TERRITORY_ID"
+        ],
+        "US_STATES": [
+            "STATE_ID"
+        ]
+    },
+    "relations": [
+        {
+            "primary_key_table_column": "CATEGORIES.CATEGORY_ID",
+            "foreign_key_table_column": "PRODUCTS.CATEGORY_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "SUPPLIERS.SUPPLIER_ID",
+            "foreign_key_table_column": "PRODUCTS.SUPPLIER_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "PRODUCTS.PRODUCT_ID",
+            "foreign_key_table_column": "ORDER_DETAILS.PRODUCT_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "ORDERS.ORDER_ID",
+            "foreign_key_table_column": "ORDER_DETAILS.ORDER_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "CUSTOMERS.CUSTOMER_ID",
+            "foreign_key_table_column": "ORDERS.CUSTOMER_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "EMPLOYEES.EMPLOYEE_ID",
+            "foreign_key_table_column": "ORDERS.EMPLOYEE_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "SHIPPERS.SHIPPER_ID",
+            "foreign_key_table_column": "ORDERS.SHIP_VIA",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "REGION.REGION_ID",
+            "foreign_key_table_column": "TERRITORIES.REGION_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "EMPLOYEES.EMPLOYEE_ID",
+            "foreign_key_table_column": "EMPLOYEES.REPORTS_TO",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "EMPLOYEES.EMPLOYEE_ID",
+            "foreign_key_table_column": "EMPLOYEE_TERRITORIES.EMPLOYEE_ID",
+            "type": "one_to_many"
+        },
+        {
+            "primary_key_table_column": "TERRITORIES.TERRITORY_ID",
+            "foreign_key_table_column": "EMPLOYEE_TERRITORIES.TERRITORY_ID",
+            "type": "one_to_many"
+          }
+    ]
+}
