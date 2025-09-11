@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument(
         "--database_dir",
         type=str,
-        default="/test/data/northwind"
+        default="/home/haseeb/Desktop/EKAI/ERD_automation/Dataset/train/northwind"
     )
 
     return parser.parse_args()

@@ -1,9 +1,9 @@
-from fastapi import FastAPI, UploadFile, Depends
+from fastapi import FastAPI, UploadFile, Depends, Query
 from fastapi.encoders import jsonable_encoder
 import pandas as pd
 from io import StringIO
 import json
-from .Database import Database
+# from .Database import Database
 from typing import Optional, Dict, List
 from fastapi import UploadFile
 from .helper import database, hdbscan 
@@ -12,6 +12,13 @@ import os
 import logging
 from .ERD_automation.spider import find_inclusion_dependencies
 from .ERD_automation.primary_key_extraction import find_pks
+from .ERD_automation.foreignKeyfilters import (
+    primary_key_check,
+    null_check,
+    auto_incremental_pk_check,
+    multi_dependence_check,
+    dependent_referencing_check
+)
 import csv
 
 app = FastAPI()
@@ -74,8 +81,6 @@ async def upload_gt_file(
         dict: A dictionary containing the status of the upload, the filename, the keys from the GT data,
               and a flag indicating whether the database description was generated successfully.
     """
-    database.db_description = generate_description() # All database files are uplaoded so generate databse descriptions 
-    find_inclusion_dependencies() 
     contents: bytes = await file.read()
     decoded: str = contents.decode("utf-8")
     gt_data: dict = json.loads(decoded)
@@ -141,6 +146,8 @@ async def cluster(cluster_method: str) -> dict:
     Example:
         GET /cluster?cluster_method=hdbScan
     """
+    database.db_description = generate_description() # All database files are uplaoded so generate databse descriptions 
+
     table_names = list(database.db_description["tables"].keys())
     texts = [
         f"{table_name} : {database.db_description['tables'][table_name]['note']}"
@@ -162,9 +169,113 @@ async def cluster(cluster_method: str) -> dict:
 @app.get("/getPrimaryKeys")
 async def getPrimaryKeys():
     database.primary_keys = find_pks()
+    return database.primary_keys
 
 @app.get("/saveInclDependencies")
 async def saveInclDependencies():
     find_inclusion_dependencies()
+
+@app.get("/getFilters")
+async def get_filters():
+    """
+    Returns a list of available filter methods for inclusion dependencies.
+    
+    Returns:
+        list: A list of available filter method names that can be applied
+              to filter inclusion dependencies in the database.
+    """
+    available_filters = [
+        "primary_key_check",
+        "null_check", 
+        "auto_incremental_pk_check",
+        "multi_dependence_check",
+        "dependent_referencing_check"
+    ]
+    database.primary_keys=find_pks() 
+    return available_filters
+
+@app.get("/applyFilters")
+async def apply_filters(methods: List[str] = Query(default=None)):
+    """
+    Applies selected filtering methods to the inclusion dependencies.
+    
+    Args:
+        methods (List[str]): List of filter method names to apply.
+                           If None or empty, no filters are applied.
+    
+    Returns:
+        dict: A dictionary containing the success status, applied methods,
+              filtered relationships, and filtering statistics.
+    """
+    if methods is None:
+        methods = []
+
+    find_inclusion_dependencies()
+
+    
+    # Store original inclusion dependencies before filtering
+    original_inds = database.inclusion_dependencies.copy()
+    
+    # Initialize filtered with all inclusion dependencies
+    database.filtered = database.inclusion_dependencies.copy()
+    
+    # Map of method names to their corresponding functions
+    filter_methods = {
+        "primary_key_check": primary_key_check,
+        "null_check": null_check,
+        "auto_incremental_pk_check": auto_incremental_pk_check,
+        "multi_dependence_check": multi_dependence_check,
+        "dependent_referencing_check": dependent_referencing_check
+    }
+    
+    applied_methods = []
+    filter_results = {}
+    
+    # Apply each selected filter method
+    for method in methods:
+        if method in filter_methods:
+            try:
+                # Store count before applying filter
+                before_count = len(database.filtered)
+                
+                # Apply the filter
+                filter_methods[method]()
+                
+                # Store count after applying filter
+                after_count = len(database.filtered)
+                
+                applied_methods.append(method)
+                filter_results[method] = {
+                    "before_count": before_count,
+                    "after_count": after_count,
+                    "filtered_out": before_count - after_count
+                }
+                
+                logging.info(f"Applied filter {method}: {before_count} -> {after_count} relationships")
+                
+            except Exception as e:
+                logging.error(f"Error applying filter {method}: {str(e)}")
+                filter_results[method] = {
+                    "error": str(e)
+                }
+    
+    # Get table names for visualization
+    table_names = list(database.r.keys('*'))
+
+    result = {
+        "success": True,
+        "applied_methods": applied_methods,
+        "original_count": len(original_inds),
+        "filtered_count": len(database.filtered),
+        "total_filtered_out": len(original_inds) - len(database.filtered),
+        "filter_results": filter_results,
+        "filtered_relationships": database.filtered,
+        "table_names": table_names,
+        "primary_keys": database.primary_keys
+    }
+
+    logging.info(f"Filter Results: {result}")
+    
+    return result
 
 

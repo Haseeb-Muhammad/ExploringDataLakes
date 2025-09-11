@@ -154,11 +154,12 @@ def find_inclusion_dependencies():
         None
 
     """
-    clear_redis_database
+    # clear_redis_database
     column_dict = load_dataFrames()
     print(f"Loaded {len(column_dict)} columns from CSV files")
+    database.inclusion_dependencies=[]
+    database.filtered=[]
 
-     
     # Run Spider algorithm
     inclusion_dict = spider_algorithm(column_dict)
     

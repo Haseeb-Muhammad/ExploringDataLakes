@@ -78,6 +78,7 @@ def primary_key_check():
     pruned_inds = []
     for ind in inds:
         #Checking if reference variable is a primary key
+
         is_pk = False
         if database.primary_keys[ind.reference.table_name][0] == ind.reference.fullName:
             is_pk=True
