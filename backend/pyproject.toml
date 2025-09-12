@@ -21,6 +21,7 @@ llvmlite = "^0.43.0"
 redis = {extras = ["hiredis"], version = "^6.4.0"}
 datasketch = "^1.6.5"
 fuzzywuzzy = "^0.18.0"
+fasttext = "^0.9.3"
 
 [build-system]
 requires = ["poetry-core"]

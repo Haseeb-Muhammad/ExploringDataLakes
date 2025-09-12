@@ -6,6 +6,7 @@ import pandas as pd
 from util import *
 from erd_visualizer import visualize_database_relationships
 from filtering import create_filter_visualizer
+from similarity import create_similarity_visualizer
 
 # Configure the page
 st.set_page_config(
@@ -116,9 +117,15 @@ def welcome_page():
             st.rerun()
     
     with button_col4:
-        if st.button("Show database description", key="show_description"):
-            mock_description = get_database_description()
-            display_database_description(mock_description)
+        if st.button("🔗 Go to Similarity", key="go_similarity"):
+            st.session_state.page = "similarity"
+            st.rerun()
+    
+    # Additional row for description button
+    st.markdown("")
+    if st.button("Show database description", key="show_description"):
+        mock_description = get_database_description()
+        display_database_description(mock_description)
 
 def clustering_page():
     """Clustering page with algorithm selection and results"""
@@ -194,6 +201,18 @@ def clustering_page():
             
             st.session_state.clustering_running = False
 
+def similarity_page():
+    """Similarity page for database relationships"""
+    # Back button
+    if st.button("← Back to Welcome", key="back_welcome_similarity"):
+        st.session_state.page = "welcome"
+        st.rerun()
+    
+    st.markdown("---")
+    
+    # Call the similarity functionality
+    create_similarity_visualizer()
+
 def filtering_page():
     """Filtering page for database relationships"""
     # Back button
@@ -218,7 +237,8 @@ def main():
     page_options = {
         "welcome": "🏠 Welcome",
         "clustering": "🔍 Clustering",
-        "filtering": "🔧 Filtering & ERD"
+        "filtering": "🔧 Filtering & ERD",
+        "similarity": "🔗 Similarity & ERD"
     }
     
     selected_page = st.sidebar.radio(
@@ -239,6 +259,8 @@ def main():
         clustering_page()
     elif st.session_state.page == "filtering":
         filtering_page()
+    elif st.session_state.page == "similarity":
+        similarity_page()
 
 if __name__ == "__main__":
     main()

@@ -10,6 +10,7 @@ from .helper import database, hdbscan
 from .descriptionGeneration.descriptionGeneration import generate_description
 import os
 import logging
+import numpy as np
 from .ERD_automation.spider import find_inclusion_dependencies
 from .ERD_automation.primary_key_extraction import find_pks
 from .ERD_automation.foreignKeyfilters import (
@@ -19,6 +20,7 @@ from .ERD_automation.foreignKeyfilters import (
     multi_dependence_check,
     dependent_referencing_check
 )
+from .similarityCalculator import SimilarityCalculator
 import csv
 
 app = FastAPI()
@@ -277,5 +279,138 @@ async def apply_filters(methods: List[str] = Query(default=None)):
     logging.info(f"Filter Results: {result}")
     
     return result
+
+@app.get("/getSimilarityMethods")
+async def get_similarity_methods():
+    """
+    Returns a list of available similarity calculation methods.
+    
+    Returns:
+        list: A list of available similarity method names that can be used
+              to calculate name similarity between database columns.
+    """
+    available_methods = [
+        "fastText",
+        "sentenceTransformer", 
+        "TF_IDF",
+        "partial_ratio"
+    ]
+    # Ensure we have inclusion dependencies to work with
+    database.primary_keys = find_pks()
+    find_inclusion_dependencies()
+    
+    return available_methods
+
+@app.get("/applySimilarity")
+async def apply_similarity(method: str = Query(..., description="Similarity method to use"), 
+                          threshold: float = Query(0.7, description="Similarity threshold (0.0 to 1.0)")):
+    """
+    Applies name similarity filtering to inclusion dependencies using the specified method.
+    
+    Args:
+        method (str): The similarity method to use for comparing column names.
+                     Must be one of: fastText, sentenceTransformer, TF_IDF, partial_ratio
+        threshold (float): Similarity threshold between 0.0 and 1.0. 
+                          Relationships with similarity above this threshold will be kept.
+    
+    Returns:
+        dict: A dictionary containing the success status, method used, threshold,
+              similarity statistics, and filtered relationships.
+    """
+    available_methods = ["fastText", "sentenceTransformer", "TF_IDF", "partial_ratio"]
+    
+    if method not in available_methods:
+        return {
+            "success": False,
+            "error": f"Method '{method}' not supported. Available methods: {available_methods}"
+        }
+    
+    if not (0.0 <= threshold <= 1.0):
+        return {
+            "success": False,
+            "error": "Threshold must be between 0.0 and 1.0"
+        }
+    
+    # Store original inclusion dependencies before similarity filtering
+    original_inds = database.inclusion_dependencies.copy()
+    
+    try:
+        # Initialize similarity calculator
+        similarity_calculator = SimilarityCalculator()
+        
+        # Get current INDs from database.filtered (or inclusion_dependencies if filtered is empty)
+        if not database.filtered:
+            database.filtered = database.inclusion_dependencies.copy()
+        
+        inds = similarity_calculator.get_INDs()
+        
+        logging.info(f"Applying {method} similarity with threshold {threshold}")
+        
+        candidates = []
+        similarity_scores = []
+        
+        for ind in inds:
+            dependent_name = ind.dependent.attribute_name
+            reference_name = ind.reference.attribute_name
+            
+            similarity = similarity_calculator.compare(
+                method=method, 
+                dependent=dependent_name, 
+                reference=reference_name
+            )
+            
+            # Handle numpy array return values
+            if isinstance(similarity, np.ndarray):
+                similarity = float(similarity.item())
+            
+            similarity_scores.append({
+                "reference": ind.reference.fullName,
+                "dependent": ind.dependent.fullName,
+                "similarity": similarity
+            })
+            
+            if similarity > threshold:
+                candidates.append(ind)
+        
+        # Update database.filtered with similarity-filtered relationships
+        database.filtered = []
+        for ind in candidates:
+            database.filtered.append((ind.reference.fullName, ind.dependent.fullName))
+        
+        # Get table names for visualization
+        table_names = list(database.r.keys('*'))
+        
+        # Calculate statistics
+        avg_similarity = np.mean([score['similarity'] for score in similarity_scores]) if similarity_scores else 0
+        max_similarity = max([score['similarity'] for score in similarity_scores]) if similarity_scores else 0
+        min_similarity = min([score['similarity'] for score in similarity_scores]) if similarity_scores else 0
+        
+        logging.info(f"Similarity filtering completed: {len(original_inds)} -> {len(database.filtered)} relationships")
+        
+        return {
+            "success": True,
+            "method": method,
+            "threshold": threshold,
+            "original_count": len(original_inds),
+            "filtered_count": len(database.filtered),
+            "total_filtered_out": len(original_inds) - len(database.filtered),
+            "similarity_stats": {
+                "average": float(avg_similarity),
+                "maximum": float(max_similarity),
+                "minimum": float(min_similarity),
+                "above_threshold": len(candidates),
+                "below_threshold": len(inds) - len(candidates)
+            },
+            "filtered_relationships": database.filtered,
+            "similarity_scores": similarity_scores,
+            "table_names": table_names
+        }
+        
+    except Exception as e:
+        logging.error(f"Error applying similarity method {method}: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Error applying similarity method: {str(e)}"
+        }
 
 
