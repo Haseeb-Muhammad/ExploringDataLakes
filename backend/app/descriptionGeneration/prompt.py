@@ -5,7 +5,7 @@ Your task is to produce a JSON description of the database in the following form
 {{
   "tables": {{
     "<TABLE_NAME>": {{
-      "note": "<One sentence describing what this table stores>",
+      "note": "<One sentence describing what this table stores. mention other tables that it might have relationship with.>",
       "columns": {{
         "<COLUMN_NAME>": {{
           "type": "<text|number|date|boolean|binary>",

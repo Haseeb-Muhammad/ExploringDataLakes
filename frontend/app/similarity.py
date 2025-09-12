@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 import numpy as np
+import pandas as pd
 from typing import List, Tuple, Dict, Set
 
 # Backend API base URL - adjust as needed
@@ -36,6 +37,19 @@ def apply_similarity(method, threshold):
         st.error(f"Error connecting to backend: {e}")
         return None
 
+def get_primary_keys():
+    """Fetch primary keys from the backend API."""
+    try:
+        response = requests.get(f"{API_BASE_URL}/getPrimaryKeys")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to fetch primary keys: {response.status_code}")
+            return {}
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to backend for primary keys: {e}")
+        return {}
+
 def parse_relationships_from_api(relationships):
     """Parse relationships from API response to format expected by visualizer."""
     parsed = []
@@ -49,13 +63,34 @@ def parse_relationships_from_api(relationships):
             parsed.append((rel[0], rel[1]))
     return parsed
 
-def extract_table_attributes(relationships: List[Tuple[str, str]], tables: List[str]) -> Dict[str, Dict[str, Set[str]]]:
-    """Extract table attributes and their types (reference/dependent) from relationships."""
+def extract_table_attributes(relationships: List[Tuple[str, str]], tables: List[str], primary_keys: Dict = None) -> Dict[str, Dict[str, Set[str]]]:
+    """Extract table attributes and their types (reference/dependent/primary) from relationships."""
     table_attrs = {}
     
     # Initialize all tables
     for table in tables:
-        table_attrs[table] = {'references': set(), 'dependents': set()}
+        table_attrs[table] = {'references': set(), 'dependents': set(), 'primary_keys': set()}
+    
+    # Add primary keys if available
+    if primary_keys:
+        for table_name, pk_info in primary_keys.items():
+            if table_name in table_attrs:
+                # Handle different formats of primary key info
+                if isinstance(pk_info, tuple):
+                    # Format: (fullName, pkScore) where fullName is "table.column"
+                    pk_column = pk_info[0].split('.')[-1] if '.' in pk_info[0] else pk_info[0]
+                    table_attrs[table_name]['primary_keys'].add(pk_column)
+                elif isinstance(pk_info, list):
+                    # Format: list of column names
+                    for pk_col in pk_info:
+                        if isinstance(pk_col, str):
+                            # Handle "table.column" format or just "column" format
+                            pk_column = pk_col.split('.')[-1] if '.' in pk_col else pk_col
+                            table_attrs[table_name]['primary_keys'].add(pk_column)
+                elif isinstance(pk_info, str):
+                    # Format: single column name string
+                    pk_column = pk_info.split('.')[-1] if '.' in pk_info else pk_info
+                    table_attrs[table_name]['primary_keys'].add(pk_column)
     
     # Process relationships
     for ref_attr, dep_attr in relationships:
@@ -65,9 +100,9 @@ def extract_table_attributes(relationships: List[Tuple[str, str]], tables: List[
             
             # Initialize tables if not exists
             if ref_table not in table_attrs:
-                table_attrs[ref_table] = {'references': set(), 'dependents': set()}
+                table_attrs[ref_table] = {'references': set(), 'dependents': set(), 'primary_keys': set()}
             if dep_table not in table_attrs:
-                table_attrs[dep_table] = {'references': set(), 'dependents': set()}
+                table_attrs[dep_table] = {'references': set(), 'dependents': set(), 'primary_keys': set()}
             
             # Add attributes
             table_attrs[ref_table]['references'].add(ref_col)
@@ -106,13 +141,36 @@ def calculate_table_positions(table_names: List[str]) -> Dict[str, Tuple[float, 
 def draw_table(ax, table_name: str, attributes: Dict[str, Set[str]], x: float, y: float):
     """Draw a table with its attributes."""
     
-    # Combine all attributes
-    all_attrs = list(attributes['references']) + list(attributes['dependents'])
+    # Create a unique set of all attributes with their types
+    all_attrs = set()
+    attr_types = {}
+    
+    # Add primary keys first (highest priority)
+    for attr in attributes.get('primary_keys', set()):
+        all_attrs.add(attr)
+        attr_types[attr] = 'primary_key'
+    
+    # Add references (if not already primary key)
+    for attr in attributes.get('references', set()):
+        all_attrs.add(attr)
+        if attr not in attr_types:
+            attr_types[attr] = 'reference'
+    
+    # Add dependents (if not already primary key or reference)
+    for attr in attributes.get('dependents', set()):
+        all_attrs.add(attr)
+        if attr not in attr_types:
+            attr_types[attr] = 'dependent'
+    
+    # Convert to sorted list
+    all_attrs = sorted(list(all_attrs))
+    
     if not all_attrs:
         all_attrs = ['(no attributes)']
+        attr_types['(no attributes)'] = 'other'
     
     # Calculate table dimensions
-    table_width = 2.0
+    table_width = 2.5
     header_height = 0.3
     attr_height = 0.25
     table_height = header_height + len(all_attrs) * attr_height
@@ -148,18 +206,24 @@ def draw_table(ax, table_name: str, attributes: Dict[str, Set[str]], x: float, y
     for i, attr in enumerate(all_attrs):
         attr_y = y + table_height/2 - header_height - (i + 0.5) * attr_height
         
-        # Color code attributes
-        color = 'black'
-        prefix = ''
-        if attr in attributes['references']:
+        # Color code and prefix attributes based on type
+        attr_type = attr_types.get(attr, 'other')
+        
+        if attr_type == 'primary_key':
+            color = 'gold'
+            prefix = '🔑 '
+        elif attr_type == 'reference':
             color = 'red'
             prefix = '→ '
-        elif attr in attributes['dependents']:
+        elif attr_type == 'dependent':
             color = 'blue'
             prefix = '← '
+        else:
+            color = 'black'
+            prefix = ''
         
         ax.text(x - table_width/2 + 0.1, attr_y, f"{prefix}{attr}",
-                ha='left', va='center', fontsize=8, color=color)
+                ha='left', va='center', fontsize=8, color=color, weight='bold' if attr_type == 'primary_key' else 'normal')
         
         # Store attribute position for drawing relationships
         attr_positions[attr] = (x, attr_y)
@@ -194,10 +258,10 @@ def draw_relationships(ax, relationships: List[Tuple[str, str]], attr_positions:
                 )
                 ax.add_patch(arrow)
 
-def visualize_similarity_relationships(relationships: List[Tuple[str, str]], table_names: List[str]) -> plt.Figure:
+def visualize_similarity_relationships(relationships: List[Tuple[str, str]], table_names: List[str], primary_keys: Dict = None) -> plt.Figure:
     """Create a visualization of similarity-filtered database relationships."""
     # Extract table attributes
-    table_attrs = extract_table_attributes(relationships, table_names)
+    table_attrs = extract_table_attributes(relationships, table_names, primary_keys)
     
     # Create figure
     fig, ax = plt.subplots(1, 1, figsize=(16, 12))
@@ -340,11 +404,15 @@ def create_similarity_visualizer():
                     if relationships and table_names:
                         st.subheader("Relationship Visualization")
                         
+                        # Fetch primary keys for visualization
+                        with st.spinner("Fetching primary keys..."):
+                            primary_keys = get_primary_keys()
+                        
                         # Parse relationships based on your API format
                         parsed_relationships = parse_relationships_from_api(relationships)
                         
                         # Generate visualization
-                        fig = visualize_similarity_relationships(parsed_relationships, table_names)
+                        fig = visualize_similarity_relationships(parsed_relationships, table_names, primary_keys)
                         st.pyplot(fig)
                         
                         # Show legend and statistics
@@ -353,7 +421,8 @@ def create_similarity_visualizer():
                         
                         with col1:
                             st.subheader("Legend")
-                            st.markdown("🔴 **Red text**: Reference attributes (→)")
+                            st.markdown("� **Gold text**: Primary keys")
+                            st.markdown("�🔴 **Red text**: Reference attributes (→)")
                             st.markdown("🔵 **Blue text**: Dependent attributes (←)")
                             st.markdown("🟢 **Green arrows**: Relationships")
                         
@@ -363,6 +432,8 @@ def create_similarity_visualizer():
                             st.markdown(f"**Relationships**: {len(parsed_relationships)}")
                             st.markdown(f"**Method**: {selected_method}")
                             st.markdown(f"**Threshold**: {threshold:.2f}")
+                            if primary_keys:
+                                st.markdown(f"**Primary Keys Found**: {len(primary_keys)}")
                         
                         # Show detailed similarity scores (optional, in an expander)
                         similarity_scores = result.get('similarity_scores', [])
@@ -371,7 +442,6 @@ def create_similarity_visualizer():
                                 st.subheader("Similarity Scores for All Relationships")
                                 
                                 # Convert to DataFrame for better display
-                                import pandas as pd
                                 df_scores = pd.DataFrame(similarity_scores)
                                 df_scores['similarity'] = df_scores['similarity'].round(3)
                                 df_scores = df_scores.sort_values('similarity', ascending=False)
